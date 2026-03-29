@@ -20,6 +20,7 @@
     <td>Imane El Morabet </td>
     <td>Emma.</td>
   </tr>
+  <tr>
     <td>230513426</td>
     <td>Hafsa El Morabet </td>
     <td>Hafsa-Eng</td>
@@ -32,4 +33,12 @@
 </table>
 
   <h1>Itroduction</h1>
+  
+  <p>
+The Home Service Management System is a web application designed to simplify the process of connecting customers with service providers such as plumbers, electricians, cleaners ect...
+</p>
+
+<p>
+It provides an easy-to-use platform where users can search for services, view worker profiles, and request services, while employees can manage their availability and respond to requests. 
+</p>
   <h1>Architecture</h1>
