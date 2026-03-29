@@ -32,7 +32,7 @@
   </tr>
 </table>
 
-  <h1>Itroduction</h1>
+  <h1>Introduction</h1>
   
   <p>
 The Home Service Management System is a web application designed to simplify the process of connecting customers with service providers such as plumbers, electricians, cleaners ect...
