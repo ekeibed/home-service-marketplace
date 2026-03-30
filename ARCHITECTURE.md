@@ -80,10 +80,13 @@ Containerization: Docker Engine.
 Network & Port: The database will communicate with the Backend server over an isolated Docker network and will be exposed on port 5432.
 
 Data Persistence: To prevent data loss when the container stops, a Docker Volume will be used to map the database files to the local disk.
+
+8.2. Deployment Diagram
+Kod snippet'i
 graph TD
     Client[Frontend: React/HTML Browser] -->|HTTP / REST API| Backend[Backend: Node.js/Python Server]
     
-    subgraph Developer Machine (Localhost)
+    subgraph Developer Machine Localhost
         Backend -->|TCP/IP: 5432| DB[(PostgreSQL Database)]
     end
     
