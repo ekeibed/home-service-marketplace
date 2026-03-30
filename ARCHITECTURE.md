@@ -33,19 +33,19 @@ The following model illustrates the core data structures of the system (Customer
 erDiagram
     USERS ||--o{ BOOKINGS : "places"
     USERS ||--|| WORKER_PROFILES : "has_profile"
-    
+
     USERS {
         int id PK
         string full_name
         string email
         string password_hash
-        string role "ENUM: 'customer', 'worker'"
+        string role "ENUM: customer, worker"
         string phone
     }
 
     WORKER_PROFILES ||--o{ BOOKINGS : "assigned_to"
     WORKER_PROFILES }o--|| SERVICE_CATEGORIES : "provides"
-    
+
     WORKER_PROFILES {
         int id PK
         int user_id FK
@@ -56,7 +56,7 @@ erDiagram
 
     SERVICE_CATEGORIES {
         int id PK
-        string name "e.g., Electrician, Plumber"
+        string name "e.g. Electrician, Plumber"
         string description
     }
 
@@ -65,34 +65,34 @@ erDiagram
         int customer_id FK
         int worker_id FK
         datetime scheduled_for
-        string status "ENUM: 'pending', 'accepted', 'completed'"
+        string status "ENUM: pending, accepted, completed"
         text service_address
     }
+```
 
 ## 8. Physical Architecture
-8.1. Local Deployment (Development Stage)
+
+### 8.1. Local Deployment (Development Stage)
 Since the project is currently in the development and demo stage, the database will not run on a physical cloud server. Instead, it will run in an isolated container environment on the developers' local machines.
 
-Host Machine: Developer's local computer (Localhost).
+* **Host Machine:** Developer's local computer (Localhost).
+* **Containerization:** Docker Engine.
+* **Network & Port:** The database will communicate with the Backend server over an isolated Docker network and will be exposed on port 5432.
+* **Data Persistence:** To prevent data loss when the container stops, a Docker Volume will be used to map the database files to the local disk.
 
-Containerization: Docker Engine.
+### 8.2. Deployment Diagram
 
-Network & Port: The database will communicate with the Backend server over an isolated Docker network and will be exposed on port 5432.
-
-Data Persistence: To prevent data loss when the container stops, a Docker Volume will be used to map the database files to the local disk.
-
-8.2. Deployment Diagram
-Kod snippet'i
+```mermaid
 graph TD
     Client[Frontend: React/HTML Browser] -->|HTTP / REST API| Backend[Backend: Node.js/Python Server]
-    
+
     subgraph Developer Machine Localhost
         Backend -->|TCP/IP: 5432| DB[(PostgreSQL Database)]
     end
-    
-    classDef storage fill:#f9f,stroke:#333,stroke-width:2px;
-    class DB storage;
-    
+
+    classDef storage fill:#f9f,stroke:#333,stroke-width:2px
+    class DB storage
+```
 
 
 ## 9. Scenarios
