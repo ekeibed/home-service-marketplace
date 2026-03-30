@@ -1,4 +1,4 @@
-Home Service Management System - software Architecture
+## Home Service Management System - software Architecture
 
 ## 1. Scope
 (To be filled)
