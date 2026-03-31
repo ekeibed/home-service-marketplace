@@ -42,3 +42,5 @@ The Home Service Management System is a web application designed to simplify the
 It provides an easy-to-use platform where users can search for services, view worker profiles, and request services, while employees can manage their availability and respond to requests. 
 </p>
   <h1>Architecture</h1>
+You can view the Software Architecture document here:
+<a href="https://github.com/ekeibed/home-service-marketplace/blob/main/ARCHITECTURE.md";>ARCHITECTURE.md</a>
