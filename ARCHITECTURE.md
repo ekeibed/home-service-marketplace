@@ -52,7 +52,39 @@ This structured interaction ensures a clear separation of responsibilities betwe
 
 
 ## 4. Architectural Goals & Constraints
-(To be filled)
+
+### 4.1 Architectural Goals
+
+The architecture of the system is designed to meet both functional and non-functional requirements.
+
+#### Functional Goals
+
+- The system should allow users to search for home services easily  
+- The system should enable customers to request services from employees  
+- Employees should be able to accept or reject service requests  
+- The admin should manage services, employees, and system activities  
+
+#### Non-Functional Goals
+
+- **Usability:** The system should provide an easy-to-use interface for all users  
+- **Performance:** The system should respond quickly to user actions  
+- **Security:** User data should be protected through authentication and authorization  
+- **Scalability:** The system should support future growth  
+- **Maintainability:** The system should be easy to update and modify
+---
+
+### 4.2 Constraints
+
+- The system does not support mobile application (web only)  
+- The project is limited by time constraints  
+- The system is designed for moderate usage, not large-scale enterprise deployment  
+- Security implementation is limited to basic authentication mechanisms  
+- The database design may evolve during development  
+- Limited development experience of team members  
+- Scalability is limited in the current version of the system  
+- The system depends on internet connectivity for operation  
+
+These goals and constraints guide the design decisions and define the limitations of the current system implementation.
 
 ## 5. Logical Architecture
 (To be filled)
