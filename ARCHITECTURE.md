@@ -7,7 +7,7 @@
 (To be filled)
 
 ## 3. Software Architecture
-## 3.1 Architecture Overview
+### 3.1 Architecture Overview
 
 The system is designed using a three-tier architecture, which separates the application into three main layers: presentation, application, and data layers. This architectural style is chosen to ensure a clear separation of concerns and to improve system maintainability, scalability, and flexibility.
 
@@ -21,17 +21,17 @@ Each layer has a specific responsibility, allowing the system to be developed, m
 
 ---
 
-## 3.2 Layer Description
+### 3.2 Layer Description
 
-### Presentation Layer
+#### Presentation Layer
 
 The presentation layer is responsible for the user interface of the system. It allows customers, employees, and administrators to interact with the application through web pages. It provides features such as login, service browsing, request creation, and profile management.
 
-### Application Layer
+#### Application Layer
 
 The application layer contains the business logic of the system. It processes user requests, manages services, handles service requests, and controls system operations. It acts as a bridge between the user interface and the database.
 
-### Data Layer
+#### Data Layer
 
 The data layer is responsible for storing and managing all system data. It includes information related to users, employees, services, service requests, and reviews. The application layer communicates with the database to retrieve and update data as needed.
 
@@ -39,7 +39,7 @@ This layered architecture improves maintainability, scalability, and separation 
 
 ---
 
-## 3.3 Layer Interaction
+### 3.3 Layer Interaction
 
 The system follows a layered interaction where each layer communicates with the adjacent layer.
 
