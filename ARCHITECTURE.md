@@ -7,8 +7,28 @@
 (To be filled)
 
 ## 3. Software Architecture
-(To be filled)
+### 3.1 Architecture Overview
+The system is designed using a three-tier architecture, which separates the application into three main layers: presentation, application, and data layers. This architectural style is chosen to ensure a clear separation of concerns and to improve system maintainability, scalability, and flexibility.
+Each layer has a specific responsibility, allowing the system to be developed, modified, and extended more easily. This structure also supports future enhancements and efficient system management.
 
+![3-Tier Architecture](3-Tier arch.png)
+<p align="center">Figure 3.1: 3-Tier Architecture of Home Service System</p>
+### 3.2 Layer Description
+Presentation Layer:
+The presentation layer is responsible for the user interface of the system. It allows customers, employees, and administrators to interact with the application through web pages. It provides features such as login, service browsing, request creation, and profile management.
+Application Layer:
+The application layer contains the business logic of the system. It processes user requests, manages services, handles service requests, and controls system operations. It acts as a bridge between the user interface and the database.
+ Data Layer:
+The data layer is responsible for storing and managing all system data. It includes                                                          information related to users, employees, services, service requests, and reviews. The application    layer communicates with the database to retrieve and update data as needed.
+This layered architecture improves maintainability, scalability, and separation of   concerns.
+3.3 Layer Interaction
+The system follows a layered interaction where each layer communicates with the adjacent layer.
+The user interacts with the presentation layer through the web interface. The presentation layer sends user requests to the application layer, where the business logic is executed. The application layer processes the request and communicates with the data layer to retrieve or store data.
+After processing, the data is returned to the application layer, which then sends the response back to the presentation layer. Finally, the presentation layer displays the results to the user.
+This structured interaction ensures a clear separation of responsibilities between layers and improves system maintainability and scalability.
+
+
+    
 ## 4. Architectural Goals & Constraints
 (To be filled)
 
