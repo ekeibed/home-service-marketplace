@@ -149,7 +149,127 @@ erDiagram
     }
 ```
 
-### 7.3. Data Dictionary
+### 7.3. Component Diagram
+
+The following diagram shows the high-level components of the system and the communication protocols between them. It serves as a roadmap for how the Frontend, Backend, and Database teams collaborate and integrate their work.
+
+```mermaid
+graph LR
+    subgraph Frontend
+        UI["UI Components<br/>(React / HTML)"]
+    end
+
+    subgraph Backend
+        API["REST API<br/>(Flask / FastAPI)"]
+        Auth["Auth Module<br/>(JWT)"]
+        BL["Business Logic<br/>(Services Layer)"]
+    end
+
+    subgraph Data Layer
+        ORM["SQLAlchemy ORM"]
+        MIG["Alembic Migrations"]
+    end
+
+    subgraph Database
+        PG[("PostgreSQL 16")]
+    end
+
+    UI -->|"HTTP Requests<br/>JSON"| API
+    API --> Auth
+    API --> BL
+    BL --> ORM
+    ORM -->|"SQL Queries<br/>TCP/IP : 5432"| PG
+    MIG -->|"Schema Versioning"| PG
+
+    classDef fe fill:#42A5F5,stroke:#1565C0,color:#fff
+    classDef be fill:#66BB6A,stroke:#2E7D32,color:#fff
+    classDef dl fill:#FFA726,stroke:#E65100,color:#fff
+    classDef db fill:#EF5350,stroke:#B71C1C,color:#fff
+
+    class UI fe
+    class API,Auth,BL be
+    class ORM,MIG dl
+    class PG db
+```
+
+### 7.4. Package Diagram
+
+This diagram illustrates the internal package structure of the project from the database developer's perspective, showing how modules are organized and which packages depend on each other.
+
+```mermaid
+graph TD
+    subgraph "app/"
+        subgraph "routes/"
+            R_USER["user_routes.py"]
+            R_BOOK["booking_routes.py"]
+            R_WORK["worker_routes.py"]
+        end
+
+        subgraph "services/"
+            S_USER["user_service.py"]
+            S_BOOK["booking_service.py"]
+            S_WORK["worker_service.py"]
+        end
+
+        subgraph "models/"
+            M_USER["user.py"]
+            M_WORK["worker_profile.py"]
+            M_CAT["service_category.py"]
+            M_BOOK["booking.py"]
+        end
+
+        subgraph "database/"
+            DB_CONN["connection.py"]
+            DB_SEED["seed.py"]
+        end
+
+        subgraph "migrations/"
+            MIG_V["versions/"]
+            MIG_ENV["env.py"]
+        end
+    end
+
+    subgraph "root"
+        DC["docker-compose.yml"]
+        ENV[".env"]
+    end
+
+    R_USER --> S_USER
+    R_BOOK --> S_BOOK
+    R_WORK --> S_WORK
+
+    S_USER --> M_USER
+    S_BOOK --> M_BOOK
+    S_WORK --> M_WORK
+    S_WORK --> M_CAT
+
+    M_USER --> DB_CONN
+    M_WORK --> DB_CONN
+    M_CAT --> DB_CONN
+    M_BOOK --> DB_CONN
+
+    DB_SEED --> M_USER
+    DB_SEED --> M_WORK
+    DB_SEED --> M_CAT
+    DB_SEED --> M_BOOK
+
+    MIG_ENV --> DB_CONN
+    DC --> DB_CONN
+
+    classDef route fill:#42A5F5,stroke:#1565C0,color:#fff
+    classDef service fill:#66BB6A,stroke:#2E7D32,color:#fff
+    classDef model fill:#FFA726,stroke:#E65100,color:#fff
+    classDef db fill:#EF5350,stroke:#B71C1C,color:#fff
+    classDef infra fill:#BDBDBD,stroke:#616161,color:#000
+
+    class R_USER,R_BOOK,R_WORK route
+    class S_USER,S_BOOK,S_WORK service
+    class M_USER,M_WORK,M_CAT,M_BOOK model
+    class DB_CONN,DB_SEED db
+    class MIG_V,MIG_ENV,DC,ENV infra
+```
+
+### 7.5. Data Dictionary
 
 #### USERS
 
@@ -191,7 +311,7 @@ erDiagram
 | status        | VARCHAR(20)  | NOT NULL, DEFAULT 'pending', CHECK (pending/accepted/completed) | Current state of the booking |
 | service_address | TEXT       | NOT NULL                                     | Where the service will be performed  |
 
-### 7.4. Demo Seed Data
+### 7.6. Demo Seed Data
 
 Since this is a demo project, the database is pre-loaded with sample data for presentation purposes. The `seed.sql` file includes sample customers, workers across different service categories, and bookings in various statuses to demonstrate all system flows.
 
