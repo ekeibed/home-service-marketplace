@@ -87,7 +87,208 @@ The architecture of the system is designed to meet both functional and non-funct
 These goals and constraints guide the design decisions and define the limitations of the current system implementation.
 
 ## 5. Logical Architecture
-(To be filled)
+  ## 5. Logical Architecture
+
+The logical view describes the key functional abstractions of the Home Service Marketplace system as seen by the end-user. It focuses on what the system does — the entities involved, their responsibilities, and how they relate and evolve over time. This view is represented using a UML Class Diagram and a set of State Diagrams.
+
+---
+
+### 5.1 Class Diagram
+
+The class diagram captures the primary domain entities of the system and their structural relationships. Only class names and associations are shown to keep the diagram clean and focused on architecture rather than implementation detail.
+
+```mermaid
+classDiagram
+
+    class User {
+        +id
+        +name
+        +email
+        +phone
+        +passwordHash
+        +role
+        +createdAt
+    }
+
+    class Customer {
+        +address
+        +savedPaymentMethods
+    }
+
+    class Worker {
+        +isVerified
+        +isAvailable
+    }
+
+    class Admin {
+        +permissions
+    }
+
+    class WorkerProfile {
+        +bio
+        +skills
+        +hourlyRate
+        +averageRating
+    }
+
+    class ServiceCategory {
+        +id
+        +name
+        +description
+    }
+
+    class ServiceRequest {
+        +id
+        +description
+        +location
+        +status
+        +createdAt
+    }
+
+    class Booking {
+        +id
+        +scheduledAt
+        +status
+        +agreedPrice
+    }
+
+    class Rating {
+        +id
+        +score
+        +comment
+        +createdAt
+    }
+
+    class Payment {
+        +id
+        +amount
+        +method
+        +status
+        +transactedAt
+    }
+
+    class Notification {
+        +id
+        +type
+        +message
+        +isRead
+        +createdAt
+    }
+
+    User <|-- Customer
+    User <|-- Worker
+    User <|-- Admin
+
+    Worker "1" --o "1" WorkerProfile : owns
+
+    Customer "1" --> "0..*" ServiceRequest : submits
+    ServiceRequest "0..*" --> "1" ServiceCategory : categorized by
+    ServiceRequest "1" --> "0..1" Booking : leads to
+
+    Booking "0..*" --> "1" Worker : assigned to
+    Booking "1" --> "0..1" Rating : reviewed through
+    Booking "1" --> "0..1" Payment : settled via
+
+    User "1" --> "0..*" Notification : receives
+```
+
+---
+
+### 5.2 State Diagrams
+
+State diagrams describe the lifecycle of the most behaviourally significant entities in the system — those whose status changes drive key interactions between actors.
+
+---
+
+#### 5.2.1 Service Request
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending : Customer submits request
+
+    Pending --> Assigned : A worker accepts
+    Pending --> Cancelled : Customer cancels
+
+    Assigned --> InProgress : Worker starts the job
+    Assigned --> Cancelled : Worker or Customer cancels
+
+    InProgress --> Completed : Worker marks job as done
+    InProgress --> Disputed : An issue is raised
+
+    Disputed --> Completed : Admin resolves — Worker favoured
+    Disputed --> Cancelled : Admin resolves — Customer favoured
+
+    Completed --> [*]
+    Cancelled --> [*]
+```
+
+---
+
+#### 5.2.2 Booking
+
+```mermaid
+stateDiagram-v2
+    [*] --> Scheduled : Created when Worker accepts the request
+
+    Scheduled --> Confirmed : Worker confirms date and time
+    Scheduled --> Rescheduled : Either party proposes a new time
+
+    Rescheduled --> Confirmed : New time is mutually agreed
+
+    Confirmed --> InProgress : Job start time is reached
+    Confirmed --> Cancelled : Cancelled before the job starts
+
+    InProgress --> Completed : Job is finished
+    InProgress --> Disputed : Issue raised during the job
+
+    Completed --> [*]
+    Cancelled --> [*]
+    Disputed --> [*]
+```
+
+---
+
+#### 5.2.3 Payment
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending : Booking completed, invoice generated
+
+    Pending --> Processing : Customer initiates payment
+
+    Processing --> Completed : Payment gateway confirms success
+    Processing --> Failed : Payment gateway returns an error
+
+    Failed --> Processing : Customer retries
+
+    Completed --> Refunded : Admin approves a refund request
+    Completed --> [*]
+    Refunded --> [*]
+```
+
+---
+
+#### 5.2.4 Worker Account
+
+```mermaid
+stateDiagram-v2
+    [*] --> Registered : Worker completes sign-up
+
+    Registered --> PendingVerification : Documents submitted for review
+
+    PendingVerification --> Verified : Admin approves the worker
+    PendingVerification --> Rejected : Admin rejects the submission
+
+    Rejected --> PendingVerification : Worker resubmits corrected documents
+
+    Verified --> Active : Worker goes online
+    Active --> Idle : Worker goes offline
+    Idle --> Active : Worker goes online
+
+    Active --> Suspended : Admin suspends due to violation
+    Suspended --> Verified : Admin reinstates the worker
+```
+
 
 
 ## 6. Process Architecture
@@ -244,7 +445,440 @@ graph TD
 
 
 ## 9. Scenarios
-(To be filled)
+## 9. Scenarios
+
+The scenarios view — also known as the use case view — illustrates the architecture through a focused set of use cases that capture the most significant sequences of interactions between actors and system objects. Each scenario validates that the architectural elements defined in the other views work together correctly to deliver end-user value.
+
+The system involves three primary actors:
+
+- **Customer** — requests and pays for home services.
+- **Worker** — accepts and fulfils service requests.
+- **Admin** — governs the platform, verifies workers, and resolves disputes.
+
+---
+
+### Overview — System Use Case Diagram
+
+The diagram below gives a high-level picture of all actors and their main interactions with the system.
+
+```mermaid
+graph LR
+    C(["👤 Customer"])
+    W(["🔧 Worker"])
+    A(["🛡️ Admin"])
+
+    subgraph HMS["Home Service Marketplace"]
+        direction TB
+        UC1(["Register / Login"])
+        UC2(["Submit Service Request"])
+        UC3(["View Worker Profile"])
+        UC4(["Rate & Review Worker"])
+        UC5(["Make Payment"])
+        UC6(["Accept / Decline Request"])
+        UC7(["Manage Worker Profile"])
+        UC8(["Verify Worker Account"])
+        UC9(["Manage Users"])
+        UC10(["Resolve Disputes"])
+        UC11(["View Analytics"])
+        UC12(["Receive Notifications"])
+    end
+
+    C --> UC1
+    C --> UC2
+    C --> UC3
+    C --> UC4
+    C --> UC5
+    C --> UC12
+
+    W --> UC1
+    W --> UC6
+    W --> UC7
+    W --> UC12
+
+    A --> UC8
+    A --> UC9
+    A --> UC10
+    A --> UC11
+    A --> UC12
+```
+
+---
+
+### SC-01 — Registration & Login
+
+**Goal:** Allow users to register and authenticate on the platform.
+
+**Actors:** Customer, Worker, Admin
+
+**Architectural elements exercised:** `User`, `Customer`, `Worker`, `Admin`, `Notification`
+
+#### Use Case Diagram
+
+```mermaid
+graph LR
+    C(["👤 Customer"])
+    W(["🔧 Worker"])
+    A(["🛡️ Admin"])
+
+    subgraph S["Registration & Login"]
+        direction TB
+        UC1(["Register as Customer"])
+        UC2(["Register as Worker"])
+        UC3(["Login"])
+        UC4(["Reset Password"])
+        UC5(["Verify Account (OTP)"])
+        UC6(["Approve Worker Registration"])
+        UC7(["Reject Worker Registration"])
+    end
+
+    C --> UC1
+    C --> UC3
+    C --> UC4
+    UC1 -.->|includes| UC5
+
+    W --> UC2
+    W --> UC3
+    W --> UC4
+    UC2 -.->|includes| UC5
+
+    A --> UC3
+    A --> UC6
+    A --> UC7
+    UC2 -.->|triggers| UC6
+```
+
+#### Main Interaction Sequence — Customer Registration:
+
+1. Customer submits registration form (name, email, phone, password).
+2. System validates inputs and checks for a duplicate email.
+3. System creates a `Customer` object and sends a verification `Notification` (OTP or email link).
+4. Customer confirms the code; system activates the account.
+5. Customer is redirected to the home screen.
+
+#### Main Interaction Sequence — Worker Registration:
+
+1. Worker submits personal details, selects service categories, and uploads ID documents.
+2. System creates a `Worker` object (status: `PendingVerification`) and a linked `WorkerProfile`.
+3. System creates an `Admin` alert `Notification` for review.
+4. Admin reviews and approves; `Worker` status transitions to `Verified`.
+5. Worker receives an activation `Notification`.
+
+#### Main Interaction Sequence — Login:
+
+1. User submits email and password.
+2. System validates credentials and issues an authentication token.
+3. User is redirected to their role-specific dashboard.
+
+**Alternative Scenarios:**
+- Wrong password (≥ 5 attempts) → account temporarily locked.
+- OAuth login (Google) → identity verified externally, token issued directly.
+- Forgot password → reset link sent via `Notification`.
+
+---
+
+### SC-02 — Service Request & Booking
+
+**Goal:** Allow a Customer to request a service and a Worker to accept and confirm a booking.
+
+**Actors:** Customer, Worker
+
+**Architectural elements exercised:** `ServiceRequest`, `Booking`, `ServiceCategory`, `WorkerProfile`, `Notification`
+
+#### Use Case Diagram
+
+```mermaid
+graph LR
+    C(["👤 Customer"])
+    W(["🔧 Worker"])
+
+    subgraph S["Service Request & Booking"]
+        direction TB
+        UC1(["Browse Service Categories"])
+        UC2(["Submit Service Request"])
+        UC3(["Cancel Request"])
+        UC4(["Accept Request"])
+        UC5(["Decline Request"])
+        UC6(["Confirm Booking"])
+        UC7(["Reschedule Booking"])
+        UC8(["Cancel Booking"])
+        UC9(["Mark Job as Complete"])
+    end
+
+    C --> UC1
+    C --> UC2
+    C --> UC3
+    C --> UC7
+    C --> UC8
+    UC2 -.->|includes| UC1
+
+    W --> UC4
+    W --> UC5
+    W --> UC6
+    W --> UC7
+    W --> UC9
+    UC4 -.->|includes| UC6
+```
+
+#### Main Interaction Sequence:
+
+1. Customer selects a `ServiceCategory` and submits a `ServiceRequest` (description, location, preferred time).
+2. System sets `ServiceRequest.status = Pending` and broadcasts a `Notification` to nearby available Workers.
+3. Worker views the request details and accepts.
+4. System sets `ServiceRequest.status = Assigned` and creates a `Booking` (status: `Scheduled`).
+5. Both actors receive a booking confirmation `Notification`.
+6. Worker confirms the scheduled time → `Booking.status = Confirmed`.
+7. At the job start time → `Booking.status = InProgress`.
+8. Worker marks the job as done → `Booking.status = Completed`, `ServiceRequest.status = Completed`.
+
+**Alternative Scenarios:**
+- No worker accepts within 24 hours → request expires; Customer is notified.
+- Worker declines → request remains `Pending` and is offered to other Workers.
+- Either party requests a reschedule → `Booking.status = Rescheduled`; new time must be mutually confirmed.
+- Customer cancels before acceptance → `ServiceRequest.status = Cancelled` at no charge.
+
+---
+
+### SC-03 — Worker Profiles & Ratings
+
+**Goal:** Allow Customers to evaluate Workers and submit reviews after a completed job.
+
+**Actors:** Customer, Worker, Admin
+
+**Architectural elements exercised:** `WorkerProfile`, `Rating`, `Booking`, `Notification`
+
+#### Use Case Diagram
+
+```mermaid
+graph LR
+    C(["👤 Customer"])
+    W(["🔧 Worker"])
+    A(["🛡️ Admin"])
+
+    subgraph S["Worker Profiles & Ratings"]
+        direction TB
+        UC1(["View Worker Profile"])
+        UC2(["Submit Rating & Review"])
+        UC3(["Skip Review"])
+        UC4(["Flag Inappropriate Review"])
+        UC5(["Remove Review"])
+    end
+
+    C --> UC1
+    C --> UC2
+    C --> UC3
+    C --> UC4
+
+    W --> UC1
+
+    A --> UC5
+    UC4 -.->|triggers| UC5
+```
+
+#### Main Interaction Sequence — View Profile:
+
+1. Customer views the matched Worker's profile.
+2. System returns `WorkerProfile` data: bio, skills, hourly rate, average rating, and past reviews.
+3. Customer decides to accept the match or request a different Worker.
+
+#### Main Interaction Sequence — Submit Rating:
+
+1. After `Booking.status = Completed`, system sends a rating prompt `Notification` to the Customer.
+2. Customer submits a score (1–5) and an optional comment.
+3. System creates a `Rating` object linked to the `Booking`.
+4. System recalculates `WorkerProfile.averageRating`.
+5. Worker receives a `Notification` informing them of the new review.
+
+**Alternative Scenarios:**
+- Customer skips the review → prompt expires after 7 days; booking archived without a rating.
+- Admin removes a review flagged as inappropriate → `WorkerProfile.averageRating` is recalculated.
+
+---
+
+### SC-04 — Payment
+
+**Goal:** Process payment from a Customer to a Worker upon job completion.
+
+**Actors:** Customer, Worker, Admin
+
+**Architectural elements exercised:** `Payment`, `Booking`, `Notification`
+
+#### Use Case Diagram
+
+```mermaid
+graph LR
+    C(["👤 Customer"])
+    W(["🔧 Worker"])
+    A(["🛡️ Admin"])
+    PG(["💳 Payment Gateway"])
+
+    subgraph S["Payment"]
+        direction TB
+        UC1(["View Invoice"])
+        UC2(["Make Payment"])
+        UC3(["Retry Failed Payment"])
+        UC4(["Raise Dispute"])
+        UC5(["Request Refund"])
+        UC6(["Approve Refund"])
+        UC7(["Release Payment to Worker"])
+    end
+
+    C --> UC1
+    C --> UC2
+    C --> UC3
+    C --> UC4
+    C --> UC5
+    UC2 -.->|includes| UC1
+    UC3 -.->|extends| UC2
+
+    W --> UC7
+
+    A --> UC6
+    A --> UC7
+    UC4 -.->|triggers| UC6
+
+    PG --> UC2
+    PG --> UC3
+```
+
+#### Main Interaction Sequence:
+
+1. `Booking.status` transitions to `Completed`; system generates a `Payment` (status: `Pending`).
+2. System sends an invoice `Notification` to the Customer.
+3. Customer reviews the amount and selects a payment method.
+4. System forwards the request to the payment gateway → `Payment.status = Processing`.
+5. Gateway confirms success → `Payment.status = Completed`.
+6. Worker receives a payment confirmation `Notification`; funds are queued for payout.
+
+**Alternative Scenarios:**
+- Gateway returns an error → `Payment.status = Failed`; Customer is prompted to retry.
+- Customer disputes the charge → payment held in escrow; Admin is notified to resolve.
+- Admin approves a refund → system initiates reversal; `Payment.status = Refunded`; both parties notified.
+
+---
+
+### SC-05 — Admin Dashboard
+
+**Goal:** Allow the Admin to govern users, monitor the platform, and resolve disputes.
+
+**Actors:** Admin, Customer, Worker
+
+**Architectural elements exercised:** `Admin`, `User`, `Worker`, `Booking`, `Payment`, `Rating`, `Notification`
+
+#### Use Case Diagram
+
+```mermaid
+graph LR
+    A(["🛡️ Admin"])
+
+    subgraph S["Admin Dashboard"]
+        direction TB
+        UC1(["View All Users"])
+        UC2(["Approve Worker"])
+        UC3(["Suspend Account"])
+        UC4(["Remove User"])
+        UC5(["Resolve Dispute"])
+        UC6(["Release Payment"])
+        UC7(["Issue Refund"])
+        UC8(["View Analytics"])
+        UC9(["Export Report"])
+        UC10(["Remove Review"])
+    end
+
+    A --> UC1
+    A --> UC2
+    A --> UC3
+    A --> UC4
+    A --> UC5
+    A --> UC8
+    A --> UC10
+    UC5 -.->|includes| UC6
+    UC5 -.->|extends| UC7
+    UC8 -.->|includes| UC9
+    UC1 -.->|includes| UC2
+    UC1 -.->|includes| UC3
+```
+
+#### Main Interaction Sequence — User Management:
+
+1. Admin filters users by role or status.
+2. Admin opens a user's profile and reviews activity log and complaints.
+3. Admin takes an action (approve, suspend, or remove); system updates the user's status.
+4. Affected user receives a status-change `Notification`.
+
+#### Main Interaction Sequence — Dispute Resolution:
+
+1. A dispute is raised on a `Booking`; system creates an alert `Notification` for the Admin.
+2. Admin reviews the booking timeline, messages, and submitted evidence.
+3. Admin decides: release payment to Worker, approve refund to Customer, or request more evidence.
+4. System executes the decision, updates `Payment.status` and `Booking.status`, and notifies both parties.
+
+#### Main Interaction Sequence — Analytics:
+
+1. Admin opens the Analytics dashboard.
+2. System aggregates and displays metrics: active users, daily bookings, revenue, top service categories, and average ratings.
+3. Admin applies date or category filters and exports the report.
+
+---
+
+### SC-06 — Real-time Notifications
+
+**Goal:** Keep all actors informed of key events without requiring manual refresh.
+
+**Actors:** Customer, Worker, Admin
+
+**Architectural elements exercised:** `Notification`, `User`, `ServiceRequest`, `Booking`, `Payment`
+
+#### Use Case Diagram
+
+```mermaid
+graph LR
+    C(["👤 Customer"])
+    W(["🔧 Worker"])
+    A(["🛡️ Admin"])
+
+    subgraph S["Real-time Notifications"]
+        direction TB
+        UC1(["Receive Push Notification"])
+        UC2(["View Notification Inbox"])
+        UC3(["Mark Notification as Read"])
+        UC4(["Receive Offline Notification"])
+    end
+
+    C --> UC1
+    C --> UC2
+    C --> UC3
+    UC1 -.->|extends| UC4
+
+    W --> UC1
+    W --> UC2
+    W --> UC3
+    UC1 -.->|extends| UC4
+
+    A --> UC1
+    A --> UC2
+    A --> UC3
+```
+
+#### Main Interaction Sequence:
+
+1. A triggering event occurs (e.g., booking confirmed, payment received, new request nearby).
+2. System creates a `Notification` record associated with the target `User`.
+3. System pushes the notification in real time via WebSocket.
+4. User's notification badge updates instantly.
+5. User opens the notification → system marks it `isRead = true`.
+
+**Notification triggers by actor:**
+
+| Actor | Trigger Events |
+|---|---|
+| **Customer** | Worker accepted request, booking confirmed, job completed, payment receipt, rating prompt, dispute resolved |
+| **Worker** | New request nearby, booking confirmed, payment received, account status changed, new review posted |
+| **Admin** | Worker pending verification, dispute raised, review flagged, system alert |
+
+**Alternative Scenarios:**
+- User is offline → notification is queued and delivered as a push notification on next app open.
+- User has disabled push notifications → notification is stored in the in-app inbox only.
+
 
 ## 10. Size and Performance
 (To be filled)
