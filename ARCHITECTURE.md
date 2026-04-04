@@ -292,8 +292,42 @@ stateDiagram-v2
 
 
 ## 6. Process Architecture
-(To be filled)
 
+### 6.1 Process View
+
+The process view focuses on the runtime behavior of the Home Service Management System and explains how different components interact during execution. It describes how user requests flow through the system, from the presentation layer to the application layer and finally to the data layer.
+
+In this system, all interactions begin at the web interface, where users such as customers, employees, and administrators perform actions like logging in, searching for services, submitting requests, or managing system data. These actions are sent to the application server, which handles the business logic and communicates with the database to store or retrieve the required information.
+
+The system is designed to support multiple users at the same time. Customers can search for services and request them, employees can review and respond to service requests, and administrators can manage employees and monitor activities. Since each request is handled independently by the application server, the system supports concurrent usage without conflicts between users.
+
+The process view also addresses important quality concerns such as performance and scalability. For example, search operations should return results quickly, and the system should be able to support more users and requests in the future. Because the application is web-based, its processes are distributed between the client side, the server side, and the database layer.
+
+The dynamic behavior of the system can be represented using UML diagrams such as sequence diagrams, activity diagrams, and communication diagrams.
+
+---
+
+### 6.2 Main Runtime Processes
+
+The main runtime processes in the Home Service Management System include the following:
+
+- Customer registration and login
+- Searching for services by type and area
+- Viewing employee profiles
+- Sending a service request
+- Employee receiving a request and accepting or rejecting it
+- Admin approving employees
+- Admin monitoring service requests and ratings
+  
+___
+
+### 6.3 Sequence Diagram – Customer Requests a Service
+
+<p align="center">
+  <img src="Sequence Diagram figure1.jpeg"/>
+</p>
+
+<p align="center"><b>Figure 6.1:</b>Sequence Diagram – Customer Requests a Service </p>
 ## 7. Development Architecture
 
 ### 7.1. Database Technology Stack
