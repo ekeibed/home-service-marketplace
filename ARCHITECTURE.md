@@ -1097,10 +1097,41 @@ graph LR
 - User is offline → notification is queued and delivered as a push notification on next app open.
 - User has disabled push notifications → notification is stored in the in-app inbox only.
 
-
+---
 ## 10. Size and Performance
-(To be filled)
 
+The Home Service Management System is designed as a lightweight web application intended for small to medium-scale usage. The system is not expected to handle extremely large enterprise-level traffic but should perform efficiently for a moderate number of users such as customers, employees, and administrators.
+
+### System Size
+The system size is relatively small to medium, as it mainly consists of:
+- A web interface (frontend)
+- An application server (backend logic)
+- A database for storing users, services, and requests
+
+The database size is expected to grow gradually as more users register and more service requests are stored. However, the data structure is simple and manageable, making the system easy to maintain and extend.
+
+### Performance Considerations
+Performance is an important factor in this system, especially for user interactions such as searching for services and sending requests.
+
+The system is designed to:
+- Provide fast response times for search operations
+- Process user requests efficiently without noticeable delays
+- Handle multiple users at the same time (concurrent access)
+
+Since the system follows a client-server architecture, the workload is mainly handled by the application server, which processes requests and communicates with the database.
+
+### Scalability
+Although the current version is designed for moderate usage, the system can be scaled in the future by:
+- Improving database performance (indexing, optimization)
+- Using more powerful servers
+- Separating services into different modules if needed
+
+### Limitations
+- The system is not optimized for very large-scale applications with thousands of simultaneous users
+- Performance may decrease if the number of users grows significantly without system upgrades
+
+Overall, the system provides acceptable performance for its intended use and can be improved in future versions.
+------
 ## 11. Quality
 
 This section defines the non-functional requirements that the system architecture must satisfy to ensure high-quality service and a positive user experience. These attributes serve as the benchmark for evaluating the success of the Home Service System’s architectural design beyond its basic functional capabilities.
