@@ -1131,7 +1131,7 @@ Although the current version is designed for moderate usage, the system can be s
 - Performance may decrease if the number of users grows significantly without system upgrades
 
 Overall, the system provides acceptable performance for its intended use and can be improved in future versions.
-------
+
 ## 11. Quality
 
 This section defines the non-functional requirements that the system architecture must satisfy to ensure high-quality service and a positive user experience. These attributes serve as the benchmark for evaluating the success of the Home Service System’s architectural design beyond its basic functional capabilities.
