@@ -1,7 +1,22 @@
 ## Home Service Management System - software Architecture
 
 ## 1. Scope
-(To be filled)
+
+This scope defines the functional boundaries of the **Home Service System**, identifying the core responsibilities of the software and establishing the limits of the initial architectural implementation.
+
+###  Functional Scope (In-Scope)
+* **User Management & Authentication:** The system provides secure user registration and login for Customers, Service Providers, and Administrators. Each user has a profile and access permissions based on their role.
+* **Service Discovery & Catalog:** A centralized directory allowing users to browse available service categories. The architecture supports dynamic metadata (descriptions, base pricing, and provider information).
+* **Service Request Lifecycle:** A state-managed workflow to handle the end-to-end progression of a job, from initial creation and scheduling to "In-Progress" and "Completed" status updates.
+* **Transaction Information Module:** The system manages service-related cost information. It supports recording service prices and includes online payment methods.
+* **Asynchronous Notification Engine:** A messaging system designed to trigger alerts for critical lifecycle events, such as booking confirmations or status changes, via the web interface.
+* **Feedback & Rating System:** The system allows users to provide ratings and feedback after completing a service to help maintain service quality.
+
+###  Out-of-Scope
+* **Physical Resource & Inventory Tracking:** The system does not provide modules for managing a provider’s physical tools, equipment, or supply chain logistics.
+* **Native Offline Capabilities:** The application is architected as a "Web-First" platform; persistent offline data synchronization and local-first processing are excluded from this version.
+* **Real-time Multimedia Communication:** High-bandwidth features such as live video streaming or integrated VOIP (Voice over IP) are outside the current architectural requirements.
+* **Predictive Analytics & AI:** The system provides standard data retrieval; it does not include machine learning models for demand forecasting or automated surge pricing logic.
 
 ## 2. References
 (To be filled)
@@ -1038,4 +1053,26 @@ graph LR
 (To be filled)
 
 ## 11. Quality
-(To be filled)
+
+This section defines the non-functional requirements that the system architecture must satisfy to ensure high-quality service and a positive user experience. These attributes serve as the benchmark for evaluating the success of the Home Service System’s architectural design beyond its basic functional capabilities.
+
+* **Availability** The system must maintain high uptime to ensure users can reliably book services and manage appointments without interruption.  
+    **Scenario:** If a system fault causes a database connection failure in the Data Layer during normal operation, the system must notify the user of the error within 5 seconds.
+
+* **Performance** The responsiveness of the web application is critical for user retention and efficient service matching.  
+    **Scenario:** If there are 20 concurrent clients performing search requests through the Web Interface under normal operation, the system must display the results in less than 1 second.
+
+* **Security** The system must ensure that only registered users with valid credentials can access private account features.  
+    **Scenario:** If a user attempts to log in with an incorrect password through the Login Page during normal operation, the system must deny access and display an "Invalid Credentials" error message in less than 2 seconds.
+
+* **Modifiability** The architecture must allow for the addition of new service categories or business rules with minimal manual effort.  
+    **Scenario:** If a developer needs to add a new service category to the System Configuration during development time, the system must incorporate the change with less than 1 hour of manual effort.
+
+* **Usability** The interface must be intuitive to minimize the learning curve for both customers and service providers.  
+    **Scenario:** If a new customer performs a first-time booking task via the User Interface under normal operation, the user must successfully complete the workflow in less than 6 minutes.
+
+* **Maintainability** The codebase must be structured to reduce technical debt and simplify the debugging process for developers.  
+    **Scenario:** If a developer identifies a logic fault within the Notification Module during the maintenance phase, the developer must be able to isolate and repair the bug with zero side effects on other system modules.
+
+* **Testability** The design must support automated verification to ensure high software quality before any new deployment.  
+    **Scenario:** If a developer executes an automated test suite against the Booking Logic during the testing phase, the system must verify the code and produce a report in less than 2 minutes.
