@@ -343,6 +343,55 @@ ___
 </p>
 
 <p align="center"><b>Figure 6.1:</b>Sequence Diagram – Customer Requests a Service </p>
+
+This sequence diagram shows how a customer searches for a service, views available employees, and sends a service request. The request is processed by the application server, stored in the database, and then sent to the employee. The employee can accept or reject the request, and the system updates the request status accordingly.
+
+### 6.4 Activity Diagram – Service Request Process
+
+<p align="center">
+  <img src="Activity Diagram.jpeg"/>
+</p>
+
+<p align="center"><b>Figure 6.2:</b> Activity diagram </p>
+
+This activity diagram shows the workflow of requesting a service. The customer searches for a service, chooses an employee, and sends a request. The system stores the request and sends it to the employee. The employee then decides whether to accept or reject it, and the customer is informed of the result.
+
+### 6.5 Sequence Diagram – Admin Approves Employee
+
+<p align="center">
+  <img src="Sequence Diagram figure2.jpeg"/>
+</p>
+
+<p align="center"><b>Figure 6.3:</b>Sequence Diagram-Admin Approves Employee </p>
+
+This diagram shows how the admin checks pending employee applications and approves an employee. The application server updates the employee’s status in the database and returns the result to the admin panel.
+
+### 6.6 Communication Diagram
+
+Objects involved:
+Customer
+Web Interface
+Application Server
+Database
+Employee
+
+<p align="center">
+  <img src="Communication Diagram.jpeg"/>
+</p>
+
+<p align="center"><b>Figure 6.4:</b>Communication Diagram </p>
+
+Communication flow:
+Customer sends search request to Web Interface
+Web Interface sends request to Application Server
+Application Server retrieves employee data from Database
+Database returns data to Application Server
+Application Server sends results to Web Interface
+Customer submits service request
+Application Server stores request in Database
+Employee receives request notification
+___
+
 ## 7. Development Architecture
 
 ### 7.1. Database Technology Stack
