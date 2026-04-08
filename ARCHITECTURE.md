@@ -90,14 +90,15 @@ The architecture of the system is designed to meet both functional and non-funct
 
 ### 4.2 Constraints
 
-- The system does not support mobile application (web only)  
-- The project is limited by time constraints  
-- The system is designed for moderate usage, not large-scale enterprise deployment  
-- Security implementation is limited to basic authentication mechanisms  
-- The database design may evolve during development  
-- Limited development experience of team members  
-- Scalability is limited in the current version of the system  
-- The system depends on internet connectivity for operation  
+•	The system is developed as a web application and does not support mobile platforms.
+•	The project is constrained by limited development time due to academic deadlines, with the architecture document due on April 10, and the full project required to be completed before the Altınbaş University final exams in 2026.
+•	The system is designed for small to medium usage and is not intended for large-scale enterprise deployment.
+•	The system uses basic authentication and authorization mechanisms based on JWT (JSON Web Token), without advanced security features such as multi-factor authentication or encryption   enhancements.
+•	The database design may be updated and refined during the development process.
+•	The development team has limited experience with full-scale web application development.
+•	The system is designed for a limited number of users and does not include advanced scalability mechanisms such as load balancing or distributed systems.
+•	The system requires a stable internet connection for proper operation.
+
 
 These goals and constraints guide the design decisions and define the limitations of the current system implementation.
 
