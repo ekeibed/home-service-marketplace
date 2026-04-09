@@ -660,3 +660,45 @@ This section defines the non-functional requirements that the system architectur
 
 * **Testability** The design must support automated verification to ensure high software quality before any new deployment.  
     **Scenario:** If a developer executes an automated test suite against the Booking Logic during the testing phase, the system must verify the code and produce a report in less than 2 minutes.
+
+---
+
+## Appendices 
+
+### Acronyms and Abbreviations: 
+
+•	UI – User Interface
+•	API – Application Programming Interface
+•	DB – Database
+•	SQL – Structured Query Language
+•	HTTP – HyperText Transfer Protocol
+•	JSON – JavaScript Object Notation
+•	CRUD – Create, Read, Update, Delete
+•	MVC – Model-View-Controller.
+•	ORM: Object-Relational Mapping
+•	RDBMS: Relational Database Management System.
+•	JWT: JSON Web Token.
+
+### Definitions
+
+•	Customer: A user who searches for and requests home services
+•	Employee: A service provider such as a plumber, electrician, or cleaner
+•	Admin: The system administrator who manages users, services, and system activities
+•	Service: A type of work offered (e.g., plumbing, cleaning)
+•	Service Request: A request made by a customer to receive a service
+•	Availability: The time periods when an employee is available for work
+•	Review: Feedback provided by customers after service completion
+
+### Design Principles
+
+•	Separation of Concerns: Each layer (frontend, backend, database) has a specific responsibility
+•	Modularity: The system is divided into independent modules for easier development
+•	Reusability: Components can be reused in different parts of the system
+•	Scalability: The system can be extended to support more users and features
+•	Maintainability: The system is designed to be easy to update and fix
+•	Simplicity: The design avoids unnecessary complexity
+
+
+
+
+  
