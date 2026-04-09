@@ -241,274 +241,99 @@ Application Server stores request in Database
 Employee receives request notification
 ___
 
+
 ## 7. Development Architecture
+
+The development view describes the system from a programmer's perspective. It focuses on the database technology choices, the data model, and the internal package organisation of the project.
+
+---
 
 ### 7.1. Database Technology Stack
 
-| Component       | Technology    | Rationale                                                                                      |
-|-----------------|---------------|------------------------------------------------------------------------------------------------|
-| **RDBMS**       | PostgreSQL 16 | The most suitable, reliable, and open-source solution for the system's relational data structure. |
-| **Local Environment** | Docker  | Ensures the exact same database version runs on all team members' machines without setup conflicts. |
-| **ORM**         | SQLAlchemy    | The Python ecosystem's most mature ORM; standardizes all data exchange between the Database and Backend layers. |
-| **Migrations**  | Alembic       | Works natively with SQLAlchemy to version-control schema changes across the team.               |
+| Component            | Technology          | Rationale                                                                                          |
+|----------------------|---------------------|----------------------------------------------------------------------------------------------------|
+| **RDBMS**            | PostgreSQL 16       | The most suitable, reliable, and open-source solution for the system's relational data structure.   |
+| **Local Environment**| Docker              | Ensures the exact same database version runs on all team members' machines without setup conflicts. |
+| **ORM**              | Django ORM          | Built into the Django framework; standardizes all data exchange between the Database and Backend.   |
+| **Migrations**       | Django Migrations   | Built into Django; version-controls all schema changes automatically across the team.              |
+
+---
 
 ### 7.2. Entity-Relationship (ER) Model
 
-The following model illustrates the core data structures of the system (Users, Worker Profiles, Service Categories, and Bookings) and their relationships:
+The following model illustrates the core data structures of the system (Users, Worker Profiles, Service Categories, and Bookings) and their relationships. The full data dictionary for each entity is provided in the Appendices.
 
-```mermaid
-erDiagram
-    USERS ||--o{ BOOKINGS : "places"
-    USERS ||--|| WORKER_PROFILES : "has_profile"
+<p align="center">
+  <img src="figures/ER_Diagram.png" width="600"/>
+</p>
 
-    USERS {
-        int id PK
-        string full_name
-        string email
-        string password_hash
-        string role "ENUM: customer, worker"
-        string phone
-    }
+<p align="center"><b>Figure 7.1:</b> Entity-Relationship (ER) Diagram</p>
 
-    WORKER_PROFILES ||--o{ BOOKINGS : "assigned_to"
-    WORKER_PROFILES }o--|| SERVICE_CATEGORIES : "provides"
-
-    WORKER_PROFILES {
-        int id PK
-        int user_id FK
-        int category_id FK
-        float average_rating
-        boolean is_available
-    }
-
-    SERVICE_CATEGORIES {
-        int id PK
-        string name "e.g. Electrician, Plumber"
-        string description
-    }
-
-    BOOKINGS {
-        int id PK
-        int customer_id FK
-        int worker_id FK
-        datetime scheduled_for
-        string status "ENUM: pending, accepted, completed"
-        text service_address
-    }
-```
+---
 
 ### 7.3. Component Diagram
 
 The following diagram shows the high-level components of the system and the communication protocols between them. It serves as a roadmap for how the Frontend, Backend, and Database teams collaborate and integrate their work.
 
-```mermaid
-graph LR
-    subgraph Frontend
-        UI["UI Components<br/>(React / HTML)"]
-    end
+<p align="center">
+  <img src="figures/Component_Diagram.png" width="600"/>
+</p>
 
-    subgraph Backend
-        API["REST API<br/>(Flask / FastAPI)"]
-        Auth["Auth Module<br/>(JWT)"]
-        BL["Business Logic<br/>(Services Layer)"]
-    end
+<p align="center"><b>Figure 7.2:</b> Component Diagram</p>
 
-    subgraph Data Layer
-        ORM["SQLAlchemy ORM"]
-        MIG["Alembic Migrations"]
-    end
-
-    subgraph Database
-        PG[("PostgreSQL 16")]
-    end
-
-    UI -->|"HTTP Requests<br/>JSON"| API
-    API --> Auth
-    API --> BL
-    BL --> ORM
-    ORM -->|"SQL Queries<br/>TCP/IP : 5432"| PG
-    MIG -->|"Schema Versioning"| PG
-
-    classDef fe fill:#42A5F5,stroke:#1565C0,color:#fff
-    classDef be fill:#66BB6A,stroke:#2E7D32,color:#fff
-    classDef dl fill:#FFA726,stroke:#E65100,color:#fff
-    classDef db fill:#EF5350,stroke:#B71C1C,color:#fff
-
-    class UI fe
-    class API,Auth,BL be
-    class ORM,MIG dl
-    class PG db
-```
+---
 
 ### 7.4. Package Diagram
 
-This diagram illustrates the internal package structure of the project from the database developer's perspective, showing how modules are organized and which packages depend on each other.
+This diagram illustrates the internal package structure of the Django project from the database developer's perspective, showing how modules are organized and which packages depend on each other.
 
-```mermaid
-graph TD
-    subgraph "app/"
-        subgraph "routes/"
-            R_USER["user_routes.py"]
-            R_BOOK["booking_routes.py"]
-            R_WORK["worker_routes.py"]
-        end
+<p align="center">
+  <img src="figures/Package_Diagram.png" width="600"/>
+</p>
 
-        subgraph "services/"
-            S_USER["user_service.py"]
-            S_BOOK["booking_service.py"]
-            S_WORK["worker_service.py"]
-        end
+<p align="center"><b>Figure 7.3:</b> Package Diagram</p>
 
-        subgraph "models/"
-            M_USER["user.py"]
-            M_WORK["worker_profile.py"]
-            M_CAT["service_category.py"]
-            M_BOOK["booking.py"]
-        end
+---
 
-        subgraph "database/"
-            DB_CONN["connection.py"]
-            DB_SEED["seed.py"]
-        end
+### 7.5. Demo Seed Data
 
-        subgraph "migrations/"
-            MIG_V["versions/"]
-            MIG_ENV["env.py"]
-        end
-    end
-
-    subgraph "root"
-        DC["docker-compose.yml"]
-        ENV[".env"]
-    end
-
-    R_USER --> S_USER
-    R_BOOK --> S_BOOK
-    R_WORK --> S_WORK
-
-    S_USER --> M_USER
-    S_BOOK --> M_BOOK
-    S_WORK --> M_WORK
-    S_WORK --> M_CAT
-
-    M_USER --> DB_CONN
-    M_WORK --> DB_CONN
-    M_CAT --> DB_CONN
-    M_BOOK --> DB_CONN
-
-    DB_SEED --> M_USER
-    DB_SEED --> M_WORK
-    DB_SEED --> M_CAT
-    DB_SEED --> M_BOOK
-
-    MIG_ENV --> DB_CONN
-    DC --> DB_CONN
-
-    classDef route fill:#42A5F5,stroke:#1565C0,color:#fff
-    classDef service fill:#66BB6A,stroke:#2E7D32,color:#fff
-    classDef model fill:#FFA726,stroke:#E65100,color:#fff
-    classDef db fill:#EF5350,stroke:#B71C1C,color:#fff
-    classDef infra fill:#BDBDBD,stroke:#616161,color:#000
-
-    class R_USER,R_BOOK,R_WORK route
-    class S_USER,S_BOOK,S_WORK service
-    class M_USER,M_WORK,M_CAT,M_BOOK model
-    class DB_CONN,DB_SEED db
-    class MIG_V,MIG_ENV,DC,ENV infra
-```
-
-### 7.5. Data Dictionary
-
-#### USERS
-
-| Column        | Type         | Constraints                        | Description                        |
-|---------------|-------------|------------------------------------|------------------------------------|
-| id            | SERIAL       | PK                                 | Auto-incremented unique identifier |
-| full_name     | VARCHAR(100) | NOT NULL                           | User's full name                   |
-| email         | VARCHAR(150) | NOT NULL, UNIQUE                   | Login email address                |
-| password_hash | VARCHAR(255) | NOT NULL                           | Bcrypt-hashed password             |
-| role          | VARCHAR(20)  | NOT NULL, CHECK (customer/worker)  | Determines user type               |
-| phone         | VARCHAR(20)  | NULLABLE                           | Optional contact number            |
-
-#### WORKER_PROFILES
-
-| Column         | Type    | Constraints                  | Description                              |
-|----------------|---------|------------------------------|------------------------------------------|
-| id             | SERIAL  | PK                           | Auto-incremented unique identifier       |
-| user_id        | INTEGER | FK → USERS.id, UNIQUE        | One-to-one link to the USERS table       |
-| category_id    | INTEGER | FK → SERVICE_CATEGORIES.id   | The service category this worker offers  |
-| average_rating | FLOAT   | DEFAULT 0.0                  | Calculated average from completed jobs   |
-| is_available   | BOOLEAN | DEFAULT TRUE                 | Whether the worker is currently active   |
-
-#### SERVICE_CATEGORIES
-
-| Column      | Type         | Constraints      | Description                          |
-|-------------|-------------|------------------|--------------------------------------|
-| id          | SERIAL       | PK               | Auto-incremented unique identifier   |
-| name        | VARCHAR(100) | NOT NULL, UNIQUE | Category label (e.g. Electrician)    |
-| description | TEXT         | NULLABLE         | Optional explanation of the category |
-
-#### BOOKINGS
-
-| Column        | Type         | Constraints                                  | Description                          |
-|---------------|-------------|----------------------------------------------|--------------------------------------|
-| id            | SERIAL       | PK                                           | Auto-incremented unique identifier   |
-| customer_id   | INTEGER      | FK → USERS.id                                | The customer who placed the booking  |
-| worker_id     | INTEGER      | FK → WORKER_PROFILES.id                      | The assigned worker                  |
-| scheduled_for | TIMESTAMP    | NOT NULL                                     | Requested date and time of service   |
-| status        | VARCHAR(20)  | NOT NULL, DEFAULT 'pending', CHECK (pending/accepted/completed) | Current state of the booking |
-| service_address | TEXT       | NOT NULL                                     | Where the service will be performed  |
-
-### 7.6. Demo Seed Data
-
-Since this is a demo project, the database is pre-loaded with sample data for presentation purposes. The `seed.sql` file includes sample customers, workers across different service categories, and bookings in various statuses to demonstrate all system flows.
+Since this is a demo project, the database is pre-loaded with sample data for presentation purposes. A Django management command (`python manage.py seed`) populates the database with sample customers, workers across different service categories, and bookings in various statuses to demonstrate all system flows.
 
 ---
 
 ## 8. Physical Architecture
 
+The physical view describes the system from a deployment perspective. It shows the mapping of software components onto physical infrastructure. Since the project is currently in the development and demo stage, all components run on the developer's local machine.
+
+---
+
 ### 8.1. Local Deployment (Development Stage)
 
-Since the project is in the development and demo stage, no cloud server is used. The entire database runs inside a Docker container on each developer's local machine.
+The entire system runs locally using Docker to containerize the database. No cloud server is used at this stage.
 
-| Layer              | Detail                          |
-|--------------------|---------------------------------|
-| **Host Machine**   | Developer's computer (Localhost)|
-| **Containerization** | Docker Engine + Docker Compose |
-| **Database Port**  | `5432` (mapped from container)  |
-| **Data Persistence** | Docker Volume → local disk    |
-| **Startup Command** | `docker-compose up -d`         |
+| Layer                | Detail                           |
+|----------------------|----------------------------------|
+| **Host Machine**     | Developer's computer (Localhost) |
+| **Containerization** | Docker Engine + Docker Compose   |
+| **Database Port**    | `5432` (mapped from container)   |
+| **Data Persistence** | Docker Volume → local disk       |
+| **Startup Command**  | `docker-compose up -d`           |
 
 The project root contains a ready-to-use `docker-compose.yml` file. Any team member can start the database with a single command without installing PostgreSQL locally.
 
+---
+
 ### 8.2. Deployment Diagram
 
-```mermaid
-graph TD
-    Client["Frontend<br/>React / HTML<br/>(Browser)"]
-    Backend["Backend Server<br/>Python / Flask or FastAPI"]
-    ORM["SQLAlchemy ORM<br/>(Data Access Layer)"]
-    subgraph Docker Environment
-        DB[("PostgreSQL 16<br/>Container")]
-        Volume[("Docker Volume<br/>/var/lib/postgresql/data")]
-    end
+The diagram below shows how the Frontend, Backend (Django), and Database (PostgreSQL in Docker) are deployed on each developer's local machine during the development stage.
 
-    Client -->|"HTTP / REST API"| Backend
-    Backend -->|"Python DB calls"| ORM
-    ORM -->|"TCP/IP : 5432"| DB
-    DB ---|"Persistent Storage"| Volume
+<p align="center">
+  <img src="figures/Deployment_Diagram.png" width="600"/>
+</p>
 
-    classDef frontend fill:#42A5F5,stroke:#1565C0,color:#fff
-    classDef backend fill:#66BB6A,stroke:#2E7D32,color:#fff
-    classDef db fill:#FFA726,stroke:#E65100,color:#fff
-    classDef volume fill:#BDBDBD,stroke:#616161,color:#000
+<p align="center"><b>Figure 8.1:</b> Deployment Diagram</p>
 
-    class Client frontend
-    class Backend,ORM backend
-    class DB db
-    class Volume volume
-```
-
+---
 
 ## 9. Scenarios
 
@@ -663,61 +488,92 @@ This section defines the non-functional requirements that the system architectur
 
 ---
 
-## Appendices 
 
-### Acronyms and Abbreviations: 
+## Appendices
 
-•	UI – User Interface
+### Acronyms and Abbreviations
 
-•	API – Application Programming Interface
-
-•	DB – Database
-
-•	SQL – Structured Query Language
-
-•	HTTP – HyperText Transfer Protocol
-
-•	JSON – JavaScript Object Notation
-
-•	CRUD – Create, Read, Update, Delete
-
-•	MVC – Model-View-Controller.
-
-•	ORM: Object-Relational Mapping
-
-•	RDBMS: Relational Database Management System.
-
-•	JWT: JSON Web Token.
+- UI – User Interface
+- API – Application Programming Interface
+- DB – Database
+- SQL – Structured Query Language
+- HTTP – HyperText Transfer Protocol
+- JSON – JavaScript Object Notation
+- CRUD – Create, Read, Update, Delete
+- MVC – Model-View-Controller
+- ORM – Object-Relational Mapping
+- RDBMS – Relational Database Management System
+- JWT – JSON Web Token
 
 ### Definitions
 
-•	Customer: A user who searches for and requests home services
-
-•	Employee: A service provider such as a plumber, electrician, or cleaner
-
-•	Admin: The system administrator who manages users, services, and system activities
-
-•	Service: A type of work offered (e.g., plumbing, cleaning)
-
-•	Service Request: A request made by a customer to receive a service
-
-•	Availability: The time periods when an employee is available for work
-
-•	Review: Feedback provided by customers after service completion
+- **Customer:** A user who searches for and requests home services
+- **Employee:** A service provider such as a plumber, electrician, or cleaner
+- **Admin:** The system administrator who manages users, services, and system activities
+- **Service:** A type of work offered (e.g., plumbing, cleaning)
+- **Service Request:** A request made by a customer to receive a service
+- **Availability:** The time periods when an employee is available for work
+- **Review:** Feedback provided by customers after service completion
 
 ### Design Principles
 
-•	Separation of Concerns: Each layer (frontend, backend, database) has a specific responsibility
+- **Separation of Concerns:** Each layer (frontend, backend, database) has a specific responsibility
+- **Modularity:** The system is divided into independent modules for easier development
+- **Reusability:** Components can be reused in different parts of the system
+- **Scalability:** The system can be extended to support more users and features
+- **Maintainability:** The system is designed to be easy to update and fix
+- **Simplicity:** The design avoids unnecessary complexity
 
-•	Modularity: The system is divided into independent modules for easier development
+---
 
-•	Reusability: Components can be reused in different parts of the system
+### Appendix A — Data Dictionary
 
-•	Scalability: The system can be extended to support more users and features
+The following tables describe the attributes, data types, and constraints for each entity in the database.
 
-•	Maintainability: The system is designed to be easy to update and fix
+#### A.1 USERS
 
-•	Simplicity: The design avoids unnecessary complexity
+
+
+| Column        | Type         | Constraints                       | Description                        |
+|---------------|-------------|-----------------------------------|------------------------------------|
+| id            | SERIAL       | PK                                | Auto-incremented unique identifier |
+| full_name     | VARCHAR(100) | NOT NULL                          | User's full name                   |
+| email         | VARCHAR(150) | NOT NULL, UNIQUE                  | Login email address                |
+| password_hash | VARCHAR(255) | NOT NULL                          | Hashed password                    |
+| role          | VARCHAR(20)  | NOT NULL, CHECK (customer/worker) | Determines user type               |
+| phone         | VARCHAR(20)  | NULLABLE                          | Optional contact number            |
+
+#### A.2 WORKER_PROFILES
+
+
+
+| Column         | Type    | Constraints                | Description                            |
+|----------------|---------|----------------------------|----------------------------------------|
+| id             | SERIAL  | PK                         | Auto-incremented unique identifier     |
+| user_id        | INTEGER | FK → USERS.id, UNIQUE      | One-to-one link to the USERS table     |
+| category_id    | INTEGER | FK → SERVICE_CATEGORIES.id | The service category this worker offers|
+| average_rating | FLOAT   | DEFAULT 0.0                | Calculated average from completed jobs |
+| is_available   | BOOLEAN | DEFAULT TRUE               | Whether the worker is currently active |
+
+#### A.3 SERVICE_CATEGORIES
+
+| Column      | Type         | Constraints      | Description                          |
+|-------------|-------------|------------------|--------------------------------------|
+| id          | SERIAL       | PK               | Auto-incremented unique identifier   |
+| name        | VARCHAR(100) | NOT NULL, UNIQUE | Category label (e.g. Electrician)    |
+| description | TEXT         | NULLABLE         | Optional explanation of the category |
+
+#### A.4 BOOKINGS
+
+
+| Column          | Type        | Constraints                                                     | Description                        |
+|-----------------|-------------|-----------------------------------------------------------------|------------------------------------|
+| id              | SERIAL      | PK                                                              | Auto-incremented unique identifier |
+| customer_id     | INTEGER     | FK → USERS.id                                                   | The customer who placed the booking|
+| worker_id       | INTEGER     | FK → WORKER_PROFILES.id                                         | The assigned worker                |
+| scheduled_for   | TIMESTAMP   | NOT NULL                                                        | Requested date and time of service |
+| status          | VARCHAR(20) | NOT NULL, DEFAULT 'pending', CHECK (pending/accepted/completed) | Current state of the booking       |
+| service_address | TEXT        | NOT NULL                                                        | Where the service will be performed|
 
 
 
