@@ -20,9 +20,12 @@ This scope defines the functional boundaries of the **Home Service System**, ide
 
 ## 2. References
 
-• The 4+1 View Model of architecture by P.B. Kruchten
-• 4+1 architectural view model from Wikipedia
+- The 4+1 View Model of architecture by P.B. Kruchten
+- 4+1 architectural view model from Wikipedia
 
+-Bass, L., Clements, P., & Kazman, R. (2012). Software architecture in practice (3rd ed.). Addison-Wesley.
+
+-Sommerville, I. (2016). Software engineering (10th ed.). Pearson.
 
 ## 3. Software Architecture
 ### 3.1 Architecture Overview
