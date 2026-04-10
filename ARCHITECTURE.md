@@ -1,5 +1,54 @@
 ## Home Service Management System - software Architecture
 
+----
+## Table of Contents
+
+1. Scope
+2. References
+3. Software Architecture
+   - Architecture Overview
+   - Layer Description
+   - Layer Interaction
+4. Architectural Goals & Constraints
+   - Architectural Goals
+   - Constraints
+5. Logical Architecture
+   - Overview
+   - Class Diagram
+   - State Diagrams
+     - Service Request State Diagram
+     - Booking State Diagram
+     - Payment State Diagram
+6. Process Architecture
+   - Process View
+   - Main Runtime Processes
+   - Sequence Diagram – Customer Requests Service
+   - Activity Diagram
+   - Sequence Diagram – Admin Approves Employee
+   - Communication Diagram
+7. Development Architecture
+   - Technology Stack
+   - Database Design (ER Diagram)
+   - Component Diagram
+   - Package Diagram
+   - Sample Data (Seed Data)
+8. Physical Architecture
+   - Deployment Overview
+   - Deployment Diagram
+9. Scenarios
+   - Overview use case Diagram 
+   - Sc-Registration and login
+   - Sc-Service Requests and Booking 
+   -  Sc-Payment
+10. Size and Performance
+11. Quality
+12. Appendices
+   - Acronyms and Abbreviations
+   - Definitions
+   - Design Principles
+
+------
+
 ## 1. Scope
 
 This scope defines the functional boundaries of the **Home Service System**, identifying the core responsibilities of the software and establishing the limits of the initial architectural implementation.
