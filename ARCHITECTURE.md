@@ -98,6 +98,17 @@ This scope defines the functional boundaries of the **Home Service System**, ide
 
 -Sommerville, I. (2016). Software engineering (10th ed.). Pearson.
 
+-Richards, M., & Ford, N. (2020). *Fundamentals of software architecture: An engineering approach*. O’Reilly Media.
+
+-ISO/IEC. (2011). *ISO/IEC 25010: Systems and software quality requirements and evaluation (SQuaRE): System and software quality models*. International Organization for Standardization.
+
+-Newman, S. (2015). *Building microservices: Designing fine-grained systems*. O’Reilly Media.  
+
+-Kruchten, P. (2004). *The rational unified process: An introduction* (3rd ed.). Addison-Wesley.  
+ 
+
+
+
 ## 3. Software Architecture
 ### 3.1 Architecture Overview
 
@@ -576,8 +587,8 @@ This section defines the non-functional requirements that the system architectur
 * **Maintainability** The codebase must be structured to reduce technical debt and simplify the debugging process for developers.  
     **Scenario:** If a developer identifies a logic fault within the Notification Module during the maintenance phase, the developer must be able to isolate and repair the bug with zero side effects on other system modules.
 
-* **Testability** The design must support automated verification to ensure high software quality before any new deployment.  
-    **Scenario:** If a developer executes an automated test suite against the Booking Logic during the testing phase, the system must verify the code and produce a report in less than 2 minutes.
+* **Testability** The design must support simple testing to ensure the system works correctly before any new deployment.  
+    **Scenario:** During normal testing, if a developer runs a simple test on the booking feature in the system, the system displays the result in the console immediately within a few seconds.
 
 ---
 
