@@ -199,7 +199,9 @@ ___
 ### 6.3 Sequence Diagram – Customer Requests a Service
 
 <p align="center">
-  <img src="Sequence Diagram figure1.jpeg"/>
+
+  ![Sequence Diagram 1](./figures/Sequence%20Diagram%20figure1.jpeg)
+
 </p>
 
 <p align="center"><b>Figure 6.1:</b>Sequence Diagram – Customer Requests a Service </p>
@@ -209,7 +211,9 @@ This sequence diagram shows how a customer searches for a service, views availab
 ### 6.4 Activity Diagram – Service Request Process
 
 <p align="center">
-  <img src="Activity Diagram.jpeg"/>
+
+  ![Activity Diagram](./figures/Activity%20Diagram.jpeg)
+  
 </p>
 
 <p align="center"><b>Figure 6.2:</b> Activity diagram </p>
@@ -219,7 +223,9 @@ This activity diagram shows the workflow of requesting a service. The customer s
 ### 6.5 Sequence Diagram – Admin Approves Employee
 
 <p align="center">
-  <img src="Sequence Diagram figure2.jpeg"/>
+  
+ ![Sequence Diagram 2](./figures/Sequence%20Diagram%20figure2.jpeg)
+  
 </p>
 
 <p align="center"><b>Figure 6.3:</b>Sequence Diagram-Admin Approves Employee </p>
@@ -236,7 +242,9 @@ Database
 Employee
 
 <p align="center">
-  <img src="Communication Diagram.jpeg"/>
+  
+  ![Communication Diagram](./figures/Communication%20Diagram.jpeg)
+  
 </p>
 
 <p align="center"><b>Figure 6.4:</b>Communication Diagram </p>
