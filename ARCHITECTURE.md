@@ -48,6 +48,27 @@
    - Design Principles
 
 ------
+## List of Figures
+
+- Figure 3.1: Three-Tier Architecture Diagram  
+- Figure 5.1: UML Class Diagram  
+- Figure 5.2: Service Request State Diagram  
+- Figure 5.3: Booking State Diagram  
+- Figure 5.4: Payment State Diagram  
+- Figure 6.1: Sequence Diagram – Customer Requests Service  
+- Figure 6.2: Activity Diagram  
+- Figure 6.3: Sequence Diagram – Admin Approves Employee  
+- Figure 6.4: Communication Diagram  
+- Figure 7.1: Entity-Relationship (ER) Diagram  
+- Figure 7.2: Component Diagram  
+- Figure 7.3: Package Diagram  
+- Figure 8.1: Deployment Diagram  
+- Figure 9.1: System Overview Use Case Diagram  
+- Figure 9.2: Use Case Diagram – Registration and Login  
+- Figure 9.3: Use Case Diagram – Service Request and Booking  
+- Figure 9.4: Use Case Diagram – Payment  
+
+----
 
 ## 1. Scope
 
@@ -69,8 +90,9 @@ This scope defines the functional boundaries of the **Home Service System**, ide
 
 ## 2. References
 
-- The 4+1 View Model of architecture by P.B. Kruchten
-- 4+1 architectural view model from Wikipedia
+-The 4+1 View Model of architecture by P.B. Kruchten
+  
+-4+1 architectural view model from Wikipedia
 
 -Bass, L., Clements, P., & Kazman, R. (2012). Software architecture in practice (3rd ed.). Addison-Wesley.
 
