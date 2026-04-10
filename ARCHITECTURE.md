@@ -29,7 +29,9 @@ The system is designed using a three-tier architecture, which separates the appl
 Each layer has a specific responsibility, allowing the system to be developed, modified, and extended more easily. This structure also supports future enhancements and efficient system management.
 
 <p align="center">
-  <img src="3-Tier arch.png" width="500"/>
+  
+![3-Tier Architecture](figures/3-Tier arch.png)
+
 </p>
 
 <p align="center"><b>Figure 3.1:</b> 3-Tier Architecture of Home Service System</p>
