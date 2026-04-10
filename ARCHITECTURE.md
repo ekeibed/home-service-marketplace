@@ -597,29 +597,8 @@ This section defines the non-functional requirements that the system architectur
 - ORM – Object-Relational Mapping
 - RDBMS – Relational Database Management System
 - JWT – JSON Web Token
-
-### Definitions
-
-- **Customer:** A user who searches for and requests home services
-- **Employee:** A service provider such as a plumber, electrician, or cleaner
-- **Admin:** The system administrator who manages users, services, and system activities
-- **Service:** A type of work offered (e.g., plumbing, cleaning)
-- **Service Request:** A request made by a customer to receive a service
-- **Availability:** The time periods when an employee is available for work
-- **Review:** Feedback provided by customers after service completion
-
-### Design Principles
-
-- **Separation of Concerns:** Each layer (frontend, backend, database) has a specific responsibility
-- **Modularity:** The system is divided into independent modules for easier development
-- **Reusability:** Components can be reused in different parts of the system
-- **Scalability:** The system can be extended to support more users and features
-- **Maintainability:** The system is designed to be easy to update and fix
-- **Simplicity:** The design avoids unnecessary complexity
-
----
-
-### Appendix A — Data Dictionary
+  
+#### Data Dictionary
 
 The following tables describe the attributes, data types, and constraints for each entity in the database.
 
@@ -668,7 +647,24 @@ The following tables describe the attributes, data types, and constraints for ea
 | status          | VARCHAR(20) | NOT NULL, DEFAULT 'pending', CHECK (pending/accepted/completed) | Current state of the booking       |
 | service_address | TEXT        | NOT NULL                                                        | Where the service will be performed|
 
+### Definitions
 
+- **Customer:** A user who searches for and requests home services
+- **Employee:** A service provider such as a plumber, electrician, or cleaner
+- **Admin:** The system administrator who manages users, services, and system activities
+- **Service:** A type of work offered (e.g., plumbing, cleaning)
+- **Service Request:** A request made by a customer to receive a service
+- **Availability:** The time periods when an employee is available for work
+- **Review:** Feedback provided by customers after service completion
+
+### Design Principles
+
+- **Separation of Concerns:** Each layer (frontend, backend, database) has a specific responsibility
+- **Modularity:** The system is divided into independent modules for easier development
+- **Reusability:** Components can be reused in different parts of the system
+- **Scalability:** The system can be extended to support more users and features
+- **Maintainability:** The system is designed to be easy to update and fix
+- **Simplicity:** The design avoids unnecessary complexity
 
 
   
