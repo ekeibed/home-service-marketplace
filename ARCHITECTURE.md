@@ -602,12 +602,11 @@ This section defines the non-functional requirements that the system architectur
 
 The following tables describe the attributes, data types, and constraints for each entity in the database.
 
-#### A.1 USERS
-
+#### A.1 Users
 
 
 | Column        | Type         | Constraints                       | Description                        |
-|---------------|-------------|-----------------------------------|------------------------------------|
+|---------------|-------------|-----------------------------------|-------------------------------------|
 | id            | SERIAL       | PK                                | Auto-incremented unique identifier |
 | full_name     | VARCHAR(100) | NOT NULL                          | User's full name                   |
 | email         | VARCHAR(150) | NOT NULL, UNIQUE                  | Login email address                |
@@ -615,7 +614,8 @@ The following tables describe the attributes, data types, and constraints for ea
 | role          | VARCHAR(20)  | NOT NULL, CHECK (customer/worker) | Determines user type               |
 | phone         | VARCHAR(20)  | NULLABLE                          | Optional contact number            |
 
-#### A.2 WORKER_PROFILES
+
+#### A.2 Worker Profiles
 
 
 
@@ -627,7 +627,7 @@ The following tables describe the attributes, data types, and constraints for ea
 | average_rating | FLOAT   | DEFAULT 0.0                | Calculated average from completed jobs |
 | is_available   | BOOLEAN | DEFAULT TRUE               | Whether the worker is currently active |
 
-#### A.3 SERVICE_CATEGORIES
+#### A.3 Service Categories
 
 | Column      | Type         | Constraints      | Description                          |
 |-------------|-------------|------------------|--------------------------------------|
