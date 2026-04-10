@@ -19,7 +19,10 @@ This scope defines the functional boundaries of the **Home Service System**, ide
 * **Predictive Analytics & AI:** The system provides standard data retrieval; it does not include machine learning models for demand forecasting or automated surge pricing logic.
 
 ## 2. References
-(To be filled)
+
+• The 4+1 View Model of architecture by P.B. Kruchten
+• 4+1 architectural view model from Wikipedia
+
 
 ## 3. Software Architecture
 ### 3.1 Architecture Overview
