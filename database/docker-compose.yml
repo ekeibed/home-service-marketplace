@@ -1,0 +1,33 @@
+# Docker Compose file for Home Service Marketplace database
+# Reads credentials from .env file in the same directory
+
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: hsm_postgres
+    restart: unless-stopped
+    environment:
+      # ${VAR} syntax reads from .env file
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - hsm_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    healthcheck:
+      # Docker pings the DB regularly to confirm it's alive.
+      # pg_isready is a built-in PostgreSQL tool that returns 0 if ready.
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  hsm_data:
+    name: hsm_postgres_data

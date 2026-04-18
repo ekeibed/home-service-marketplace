@@ -1,0 +1,69 @@
+# ==========================================
+# Environment & Secrets
+# ==========================================
+# Never commit files containing passwords, API keys, or credentials
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ==========================================
+# Python (backend team will use these)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# ==========================================
+# Node.js (frontend team, if they use npm)
+# ==========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+
+# ==========================================
+# IDE & Editor
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ==========================================
+# Operating System
+# ==========================================
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+._*
+
+# Linux
+*~
+
+# ==========================================
+# Database
+# ==========================================
+# Local PostgreSQL data dumps (if we ever create backups)
+*.sql.bak
+*.dump
+
+# Docker volume data (we never commit actual database files)
+postgres_data/
+pgdata/
+
+# ==========================================
+# Logs
+# ==========================================
+*.log
+logs/
