@@ -1956,3 +1956,116 @@ body {
     flex-direction: column;
     gap: 4px;
 }
+
+/* === Employee & admin panels === */
+.panel-stack {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 1.5rem 56px;
+}
+
+.panel-hint {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0 0 16px;
+    line-height: 1.45;
+}
+
+.panel-availability-card h2 {
+    margin-bottom: 8px;
+}
+
+.avail-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-family: var(--font-body);
+}
+
+.avail-toggle input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--blue-main);
+    cursor: pointer;
+}
+
+.worker-request-card,
+.admin-pending-card {
+    align-items: flex-start;
+}
+
+.request-detail {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.request-problem {
+    font-size: 14px;
+    color: var(--text-primary);
+    margin: 10px 0 0;
+    line-height: 1.45;
+}
+
+.worker-request-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.btn-accept {
+    background: #e8f5e9;
+    border: 1.5px solid #2e7d32;
+    color: #2e7d32;
+    padding: 8px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-accept:hover {
+    background: #2e7d32;
+    color: #fff;
+}
+
+.btn-reject-worker {
+    background: #fff;
+    border: 1.5px solid #c62828;
+    color: #c62828;
+    padding: 8px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-reject-worker:hover {
+    background: #ffebee;
+}
+
+@media (max-width: 640px) {
+    .worker-request-card,
+    .admin-pending-card {
+        flex-direction: column;
+    }
+
+    .worker-request-actions {
+        flex-direction: row;
+        width: 100%;
+    }
+
+    .worker-request-actions .btn-accept,
+    .worker-request-actions .btn-reject-worker {
+        flex: 1;
+    }
+}

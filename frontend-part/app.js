@@ -1,3 +1,17 @@
+// --- Mock dataset (mock-data.js) ---
+const HF = window.HomeFixMock;
+if (!HF) {
+    console.error('HomeFix: load mock-data.js before app.js');
+}
+
+const employees = (HF && HF.employees ? HF.employees : []).map(e => ({ ...e }));
+let fakeReviews = (HF && HF.defaultProfileReviews ? HF.defaultProfileReviews : []).map(r => ({ ...r }));
+let fakeBookings = (HF && HF.initialCustomerBookings ? HF.initialCustomerBookings : []).map(b => ({ ...b }));
+let workerIncomingRequests = (HF && HF.initialWorkerRequests ? HF.initialWorkerRequests : []).map(r => ({ ...r }));
+let pendingWorkerApplications = HF && HF.initialPendingWorkerApplications
+    ? HF.initialPendingWorkerApplications.map(w => ({ ...w }))
+    : [];
+
 // --- Modal state ---
 let currentLoginRole = 'user';
 let currentRegisterRole = 'user';
@@ -11,14 +25,15 @@ function openModal(type) {
 
 // Close modal
 function closeModal() {
-    document.getElementById('overlay').classList.remove('active');
+    const overlay = document.getElementById('overlay');
+    if (!overlay) return;
+    overlay.classList.remove('active');
 }
 
 // Close if clicking outside modal box
 function closeModalOutside(event) {
-    if (event.target === document.getElementById('overlay')) {
-        closeModal();
-    }
+    const overlay = document.getElementById('overlay');
+    if (overlay && event.target === overlay) closeModal();
 }
 
 // Show login or register form
@@ -148,23 +163,10 @@ function handleRegister() {
     closeModal();
 }
 
-// --- Hero search handler ---
-/*function handleSearch() {
-    const query = document.getElementById('heroSearch').value.trim();
-    if (!query) {
-        alert('Please enter a service to search for.');
-        return;
-    }
-    // TODO: Redirect to search results page
-    console.log('Searching for:', query);
-    alert(`Searching for "${query}"...\n(Search results page coming soon)`);
-}
-
-// Fill search bar from quick-tag clicks
+// From landing page service cards — opens browse view with category pre-selected
 function fillSearch(serviceName) {
-    document.getElementById('heroSearch').value = serviceName;
-    document.getElementById('heroSearch').focus();
-} */
+    window.location.href = 'user-dashboard.html?service=' + encodeURIComponent(serviceName);
+}
 
 // --- Utility ---
 function isValidEmail(email) {
@@ -173,20 +175,12 @@ function isValidEmail(email) {
 
 // --- Keyboard: close modal on Escape ---
 document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeModal();
+    if (e.key !== 'Escape') return;
+    closeModal();
+    const ro = document.getElementById('requestOverlay');
+    if (ro && ro.classList.contains('active')) closeRequestModal();
 });
 // === USER DASHBOARD ===
-
-const employees = [
-    { id: 1, name: 'Ahmed Karim', initials: 'AK', photo: 'https://randomuser.me/api/portraits/men/32.jpg', service: 'Plumbing', rating: 4.9, reviews: 38, bio: '8 years experience. Leaks, pipes, full installations.', area: 'Üsküdar', hourlyRate: 150, available: true },
-    { id: 2, name: 'Sara Reyes', initials: 'SR', photo: 'https://randomuser.me/api/portraits/women/44.jpg', service: 'Electrical', rating: 4.8, reviews: 52, bio: 'Certified electrician. Wiring, panels, outlets.', area: 'Kadıköy', hourlyRate: 180, available: true },
-    { id: 3, name: 'Mohamed Nour', initials: 'MN', photo: 'https://randomuser.me/api/portraits/men/45.jpg', service: 'Painting', rating: 4.7, reviews: 29, bio: 'Interior & exterior painting. Clean and precise work.', area: 'Ümraniye', hourlyRate: 120, available: false },
-    { id: 4, name: 'Lina Hamdan', initials: 'LH', photo: 'https://randomuser.me/api/portraits/women/68.jpg', service: 'Cleaning', rating: 4.9, reviews: 61, bio: 'Deep clean specialist. Homes, offices, move-out cleans.', area: 'Beşiktaş', hourlyRate: 100, available: true },
-    { id: 5, name: 'Omar Fathi', initials: 'OF', photo: 'https://randomuser.me/api/portraits/men/52.jpg', service: 'Carpentry', rating: 4.6, reviews: 17, bio: 'Custom furniture, doors, shelving. Quality woodwork.', area: 'Kadıköy', hourlyRate: 200, available: true },
-    { id: 6, name: 'Yasmin Saleh', initials: 'YS', photo: 'https://randomuser.me/api/portraits/women/21.jpg', service: 'Moving', rating: 4.5, reviews: 23, bio: 'Full moving service. Packing, transport, unpacking.', area: 'Ümraniye', hourlyRate: 130, available: true },
-    { id: 7, name: 'Khaled Mostafa', initials: 'KM', photo: 'https://randomuser.me/api/portraits/men/11.jpg', service: 'Plumbing', rating: 4.4, reviews: 14, bio: 'Bathroom fittings, pipe repair, water heaters.', area: 'Üsküdar', hourlyRate: 140, available: false },
-    { id: 8, name: 'Dina Ashraf', initials: 'DA', photo: 'https://randomuser.me/api/portraits/women/55.jpg', service: 'Cleaning', rating: 4.8, reviews: 44, bio: 'Regular and deep cleaning. Eco-friendly products available.', area: 'Beşiktaş', hourlyRate: 110, available: true },
-];
 
 function renderEmployees(list) {
     const grid = document.getElementById('empGrid');
@@ -274,18 +268,37 @@ function handleLogout() {
     window.location.href = 'index.html';
 }
 
+function initUserDashboardFromQuery() {
+    const grid = document.getElementById('empGrid');
+    if (!grid) return;
+    const service = new URLSearchParams(window.location.search).get('service');
+    if (!service) return;
+    const sel = document.getElementById('filterService');
+    if (sel) {
+        const match = Array.from(sel.options).find(o => o.value === service || o.textContent === service);
+        if (match) sel.value = match.value;
+    }
+    const esc = service.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const matchRe = new RegExp(`selectPill\\(this,\\s*'${esc}'\\)`);
+    const pills = document.querySelectorAll('.cat-pills .pill');
+    pills.forEach(p => p.classList.remove('active'));
+    let matchedPill = null;
+    pills.forEach(p => {
+        if (matchRe.test(p.getAttribute('onclick') || '')) matchedPill = p;
+    });
+    if (matchedPill) matchedPill.classList.add('active');
+    else pills.forEach(p => {
+        if (/selectPill\(this,\s*''\)/.test(p.getAttribute('onclick') || '')) p.classList.add('active');
+    });
+    filterEmployees();
+}
+
 // Auto-render on page load
 if (document.getElementById('empGrid')) {
     renderEmployees(employees);
+    initUserDashboardFromQuery();
 }
 // === EMPLOYEE PROFILE ===
-
-const fakeReviews = [
-    { author: 'Mona T.', stars: 5, date: 'March 2025', text: 'Excellent work! Fixed the leak quickly and left everything clean.' },
-    { author: 'Karim B.', stars: 5, date: 'Feb 2025', text: 'Very professional and on time. Highly recommend.' },
-    { author: 'Nadia S.', stars: 4, date: 'Jan 2025', text: 'Good job overall, explained everything clearly.' },
-    { author: 'Hassan R.', stars: 5, date: 'Dec 2024', text: 'Best plumber I have hired. Will call again.' },
-];
 
 let selectedStar = 0;
 
@@ -363,13 +376,6 @@ function loadProfile() {
 loadProfile();
 
 
-const fakeBookings = [
-    { id: 1, name: 'Ahmed Karim', initials: 'AK', service: 'Plumbing', date: 'April 10, 2025', status: 'completed' },
-    { id: 4, name: 'Lina Hamdan', initials: 'LH', service: 'Cleaning', date: 'April 3, 2025', status: 'confirmed' },
-    { id: 2, name: 'Sara Reyes', initials: 'SR', service: 'Electrical', date: 'March 28, 2025', status: 'pending' },
-];
-
-
 function switchTab(el, tab) {
     document.querySelectorAll('.acc-tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
@@ -438,17 +444,18 @@ function changePassword() {
 
 
 function openRequestModal() {
-    document.getElementById('requestOverlay').classList.add('active');
+    const el = document.getElementById('requestOverlay');
+    if (el) el.classList.add('active');
 }
 
 function closeRequestModal() {
-    document.getElementById('requestOverlay').classList.remove('active');
+    const el = document.getElementById('requestOverlay');
+    if (el) el.classList.remove('active');
 }
 
 function closeRequestOutside(event) {
-    if (event.target === document.getElementById('requestOverlay')) {
-        closeRequestModal();
-    }
+    const el = document.getElementById('requestOverlay');
+    if (el && event.target === el) closeRequestModal();
 }
 
 function submitRequest() {
@@ -493,4 +500,116 @@ function handlePhotoUpload(inputId, avatarElId, initialsElId) {
         // TODO: fetch('/api/upload-photo', { method: 'POST', body: formData })
     };
     reader.readAsDataURL(file);
+}
+
+// === EMPLOYEE DASHBOARD (mock — replace with API) ===
+
+function renderWorkerRequests() {
+    const list = document.getElementById('workerRequestList');
+    const empty = document.getElementById('workerNoRequests');
+    if (!list) return;
+
+    const pending = workerIncomingRequests.filter(r => r.status === 'pending');
+    if (pending.length === 0) {
+        list.innerHTML = '';
+        if (empty) empty.style.display = 'block';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+    list.innerHTML = pending.map(r => `
+    <div class="booking-card worker-request-card">
+      <div class="booking-avatar">${r.initials}</div>
+      <div class="booking-info" style="min-width:200px">
+        <strong>${r.customer}</strong>
+        <span>${r.service}</span>
+        <div class="request-detail">${r.address}</div>
+        <div class="request-detail">${r.when}</div>
+        <p class="request-problem">${r.problem}</p>
+      </div>
+      <div class="worker-request-actions">
+        <button type="button" class="btn-accept" onclick="acceptWorkerRequest(${r.id})">Accept</button>
+        <button type="button" class="btn-reject-worker" onclick="rejectWorkerRequest(${r.id})">Decline</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function acceptWorkerRequest(id) {
+    const r = workerIncomingRequests.find(x => x.id === id);
+    if (!r) return;
+    r.status = 'accepted';
+    // TODO: PATCH booking / service request
+    renderWorkerRequests();
+}
+
+function rejectWorkerRequest(id) {
+    const r = workerIncomingRequests.find(x => x.id === id);
+    if (!r) return;
+    r.status = 'rejected';
+    // TODO: notify customer
+    renderWorkerRequests();
+}
+
+function setWorkerAvailableFromToggle() {
+    const el = document.getElementById('workerAvailToggle');
+    if (!el) return;
+    // TODO: sync availability with backend
+    console.log('Availability:', el.checked);
+}
+
+if (document.getElementById('workerRequestList')) {
+    const t = document.getElementById('workerAvailToggle');
+    if (t) t.addEventListener('change', setWorkerAvailableFromToggle);
+    renderWorkerRequests();
+}
+
+// === ADMIN PANEL (mock — replace with API) ===
+
+function renderPendingWorkers() {
+    const list = document.getElementById('adminPendingList');
+    const empty = document.getElementById('adminNoPending');
+    if (!list) return;
+
+    if (pendingWorkerApplications.length === 0) {
+        list.innerHTML = '';
+        if (empty) empty.style.display = 'block';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+    list.innerHTML = pendingWorkerApplications.map(w => `
+    <div class="booking-card admin-pending-card">
+      <div class="booking-avatar">${w.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()}</div>
+      <div class="booking-info" style="min-width:220px">
+        <strong>${w.name}</strong>
+        <span>${w.service} · Applied ${w.submitted}</span>
+        <div class="request-detail">${w.email}</div>
+        <div class="request-detail">${w.phone}</div>
+      </div>
+      <div class="worker-request-actions">
+        <button type="button" class="btn-accept" onclick="approveWorkerApplication(${w.id})">Approve</button>
+        <button type="button" class="btn-reject-worker" onclick="rejectWorkerApplication(${w.id})">Reject</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function approveWorkerApplication(id) {
+    const i = pendingWorkerApplications.findIndex(w => w.id === id);
+    if (i === -1) return;
+    pendingWorkerApplications.splice(i, 1);
+    // TODO: POST admin/approve-worker
+    renderPendingWorkers();
+    alert('Worker approved. They can now sign in as an employee.');
+}
+
+function rejectWorkerApplication(id) {
+    const i = pendingWorkerApplications.findIndex(w => w.id === id);
+    if (i === -1) return;
+    pendingWorkerApplications.splice(i, 1);
+    renderPendingWorkers();
+    alert('Application rejected.');
+}
+
+if (document.getElementById('adminPendingList')) {
+    renderPendingWorkers();
 }
