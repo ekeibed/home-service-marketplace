@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HomeFix – Admin</title>
+    <link rel="stylesheet" href="style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@600;700&display=swap"
+        rel="stylesheet" />
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="logo" style="text-decoration:none;color:inherit">Home<span>Fix</span></a>
+        <div class="nav-btns">
+            <button class="btn-outline" onclick="handleLogout()">Log out</button>
+        </div>
+    </nav>
+
+    <section class="dash-search-section">
+        <h1>Administration</h1>
+        <p>Verify new employee registrations before they can accept jobs</p>
+    </section>
+
+    <section class="panel-stack">
+        <div class="grid-header" style="margin:0 0 14px;">
+            <span>Pending employee applications</span>
+        </div>
+        <div class="bookings-list" id="adminPendingList"></div>
+        <p class="no-results" id="adminNoPending" style="display:none">No pending applications.</p>
+    </section>
+
+    <script src="mock-data.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
