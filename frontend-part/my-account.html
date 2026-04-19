@@ -10,96 +10,110 @@
         rel="stylesheet" />
 </head>
 
-<body>
+<body class="hf-app page-my-account">
 
-    <!-- NAVBAR -->
     <nav class="nav">
-        <div class="logo">Home<span>Fix</span></div>
+        <a href="index.html" class="logo">Home<span>Fix</span></a>
         <div class="nav-btns">
-            <a href="user-dashboard.html" class="nav-link">← Browse</a>
+            <a href="user-dashboard.html" class="nav-link">Browse services</a>
             <button class="btn-outline" onclick="handleLogout()">Log out</button>
         </div>
     </nav>
 
-    <section class="account-section">
+    <section class="account-section account-section--modern">
 
-        <!-- <div class="account-header">
-            <div class="account-avatar" id="accountAvatar">
-  <span id="accountAvatarInitials">MT</span>
-</div>
-<input type="file" id="accountPhotoInput" accept="image/*" style="display:none" onchange="handlePhotoUpload('accountPhotoInput','accountAvatar','accountAvatarInitials')"/>
-<label for="accountPhotoInput" class="change-photo-link">Change photo</label>
-            <div>
-                <h1 id="accountName">Mona Tarek</h1>
-                <p id="accountEmail">mona@email.com</p>
+        <header class="account-hero-card">
+            <div class="account-hero-main">
+                <div class="account-avatar account-avatar--hero" id="accountAvatar">
+                    <span id="accountAvatarInitials">MT</span>
+                </div>
+                <div class="account-header-info">
+                    <p class="account-eyebrow">Your profile</p>
+                    <h1 id="accountName">Mona Tarek</h1>
+                    <p id="accountEmail" class="account-hero-email">mona@email.com</p>
+                    <input type="file" id="accountPhotoInput" accept="image/*" style="display:none"
+                        onchange="handlePhotoUpload('accountPhotoInput','accountAvatar','accountAvatarInitials')" />
+                    <label for="accountPhotoInput" class="account-photo-pill">Change photo</label>
+                </div>
             </div>
-        </div> -->
+            <a href="user-dashboard.html" class="account-hero-cta" aria-label="Find professionals">Find a pro →</a>
+        </header>
 
-        <div class="account-header">
-            <div class="account-avatar" id="accountAvatar">
-                <span id="accountAvatarInitials">MT</span>
-            </div>
-            <div class="account-header-info">
-                <h1 id="accountName">Mona Tarek</h1>
-                <p id="accountEmail">mona@email.com</p>
-                <input type="file" id="accountPhotoInput" accept="image/*" style="display:none"
-                    onchange="handlePhotoUpload('accountPhotoInput','accountAvatar','accountAvatarInitials')" />
-                <label for="accountPhotoInput" class="change-photo-link">Change photo</label>
+        <div class="account-tabs account-tabs--segmented" role="tablist" aria-label="Account sections">
+            <button type="button" class="acc-tab active" role="tab" aria-selected="true"
+                onclick="switchTab(this, 'profile')">
+                <span class="acc-tab-icon" aria-hidden="true">◇</span> Profile
+            </button>
+            <button type="button" class="acc-tab" role="tab" aria-selected="false" onclick="switchTab(this, 'bookings')">
+                <span class="acc-tab-icon" aria-hidden="true">◈</span> Bookings
+            </button>
+        </div>
+
+        <div class="tab-content account-tab-panel" id="tab-profile">
+            <div class="account-cards-grid">
+                <article class="form-card account-card">
+                    <div class="account-card-head">
+                        <h2>Personal information</h2>
+                        <p class="account-card-desc">Name and contact details shown on requests.</p>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editName">Full name</label>
+                            <input type="text" id="editName" value="Mona Tarek" autocomplete="name" />
+                        </div>
+                        <div class="form-group">
+                            <label for="editEmail">Email address</label>
+                            <input type="email" id="editEmail" value="mona@email.com" autocomplete="email" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editPhone">Phone / WhatsApp</label>
+                            <input type="tel" id="editPhone" value="+90 555 123 4567" autocomplete="tel" />
+                        </div>
+                        <div class="form-group">
+                            <label for="editCity">City</label>
+                            <input type="text" id="editCity" value="Istanbul" autocomplete="address-level2" />
+                        </div>
+                    </div>
+                    <div class="account-card-footer">
+                        <button type="button" class="btn-main account-btn-save" onclick="saveProfile()">Save changes</button>
+                    </div>
+                </article>
+
+                <article class="form-card account-card">
+                    <div class="account-card-head">
+                        <h2>Security</h2>
+                        <p class="account-card-desc">Update the password for this demo account.</p>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="currentPass">Current password</label>
+                            <input type="password" id="currentPass" placeholder="••••••••" autocomplete="current-password" />
+                        </div>
+                        <div class="form-group">
+                            <label for="newPass">New password</label>
+                            <input type="password" id="newPass" placeholder="••••••••" autocomplete="new-password" />
+                        </div>
+                    </div>
+                    <div class="account-card-footer">
+                        <button type="button" class="btn-main account-btn-save account-btn-save--outline"
+                            onclick="changePassword()">Update password</button>
+                    </div>
+                </article>
             </div>
         </div>
 
-        <div class="account-tabs">
-            <button class="acc-tab active" onclick="switchTab(this, 'profile')">Profile</button>
-            <button class="acc-tab" onclick="switchTab(this, 'bookings')">Bookings</button>
-        </div>
-
-        <!-- PROFILE TAB -->
-        <div class="tab-content" id="tab-profile">
-            <div class="form-card">
-                <h2>Personal information</h2>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Full name</label>
-                        <input type="text" id="editName" value="Mona Tarek" />
-                    </div>
-                    <div class="form-group">
-                        <label>Email address</label>
-                        <input type="email" id="editEmail" value="mona@email.com" />
-                    </div>
+        <div class="tab-content account-tab-panel" id="tab-bookings" style="display:none">
+            <div class="account-bookings-shell">
+                <div class="account-bookings-head">
+                    <h2 class="account-bookings-title">Your bookings</h2>
+                    <p class="account-bookings-sub">Track visits and manage pending jobs.</p>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Phone / WhatsApp</label>
-                        <input type="tel" id="editPhone" value="+90 555 123 4567" />
-                    </div>
-                    <div class="form-group">
-                        <label>City</label>
-                        <input type="text" id="editCity" value="Istanbul" />
-                    </div>
-                </div>
-                <button class="btn-main" style="max-width:200px" onclick="saveProfile()">Save changes</button>
+                <div class="bookings-list" id="bookingsList"></div>
+                <p class="no-results account-bookings-empty" id="noBookings" style="display:none">You have not booked any
+                    professionals yet. <a href="user-dashboard.html">Browse services</a> to get started.</p>
             </div>
-
-            <div class="form-card" style="margin-top:20px">
-                <h2>Change password</h2>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Current password</label>
-                        <input type="password" id="currentPass" placeholder="••••••••" />
-                    </div>
-                    <div class="form-group">
-                        <label>New password</label>
-                        <input type="password" id="newPass" placeholder="••••••••" />
-                    </div>
-                </div>
-                <button class="btn-main" style="max-width:200px" onclick="changePassword()">Update password</button>
-            </div>
-        </div>
-
-        <!-- BOOKINGS TAB -->
-        <div class="tab-content" id="tab-bookings" style="display:none">
-            <div class="bookings-list" id="bookingsList"></div>
-            <p class="no-results" id="noBookings" style="display:none">You have not contacted any professionals yet.</p>
         </div>
 
     </section>

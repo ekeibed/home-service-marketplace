@@ -421,10 +421,15 @@ loadProfile();
 
 
 function switchTab(el, tab) {
-    document.querySelectorAll('.acc-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.acc-tab').forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+    });
     el.classList.add('active');
+    el.setAttribute('aria-selected', 'true');
     document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-    document.getElementById('tab-' + tab).style.display = 'block';
+    const panel = document.getElementById('tab-' + tab);
+    if (panel) panel.style.display = 'block';
     if (tab === 'bookings') renderBookings();
 }
 
