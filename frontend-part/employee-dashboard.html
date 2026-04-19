@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HomeFix – Professional dashboard</title>
+    <link rel="stylesheet" href="style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@600;700&display=swap"
+        rel="stylesheet" />
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="logo" style="text-decoration:none;color:inherit">Home<span>Fix</span></a>
+        <div class="nav-btns">
+            <a href="user-dashboard.html" class="nav-link">Browse jobs</a>
+            <button class="btn-outline" onclick="handleLogout()">Log out</button>
+        </div>
+    </nav>
+
+    <section class="dash-search-section">
+        <h1>Professional dashboard</h1>
+        <p>Review incoming service requests and keep your availability up to date</p>
+    </section>
+
+    <section class="panel-stack">
+        <div class="form-card panel-availability-card">
+            <h2>Availability</h2>
+            <p class="panel-hint">Customers only see you as available when this is on (demo — not saved to a server).</p>
+            <label class="avail-toggle">
+                <input type="checkbox" id="workerAvailToggle" checked />
+                <span>I am available for new requests</span>
+            </label>
+        </div>
+
+        <div class="grid-header" style="margin:28px 0 14px;">
+            <span>Incoming requests</span>
+        </div>
+        <div class="bookings-list" id="workerRequestList"></div>
+        <p class="no-results" id="workerNoRequests" style="display:none">You have no pending requests right now.</p>
+    </section>
+
+    <script src="mock-data.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
