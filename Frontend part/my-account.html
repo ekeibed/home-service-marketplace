@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HomeFix – My Account</title>
+    <link rel="stylesheet" href="style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@600;700&display=swap"
+        rel="stylesheet" />
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="nav">
+        <div class="logo">Home<span>Fix</span></div>
+        <div class="nav-btns">
+            <a href="user-dashboard.html" class="nav-link">← Browse</a>
+            <button class="btn-outline" onclick="handleLogout()">Log out</button>
+        </div>
+    </nav>
+
+    <section class="account-section">
+
+        <!-- <div class="account-header">
+            <div class="account-avatar" id="accountAvatar">
+  <span id="accountAvatarInitials">MT</span>
+</div>
+<input type="file" id="accountPhotoInput" accept="image/*" style="display:none" onchange="handlePhotoUpload('accountPhotoInput','accountAvatar','accountAvatarInitials')"/>
+<label for="accountPhotoInput" class="change-photo-link">Change photo</label>
+            <div>
+                <h1 id="accountName">Mona Tarek</h1>
+                <p id="accountEmail">mona@email.com</p>
+            </div>
+        </div> -->
+
+        <div class="account-header">
+            <div class="account-avatar" id="accountAvatar">
+                <span id="accountAvatarInitials">MT</span>
+            </div>
+            <div class="account-header-info">
+                <h1 id="accountName">Mona Tarek</h1>
+                <p id="accountEmail">mona@email.com</p>
+                <input type="file" id="accountPhotoInput" accept="image/*" style="display:none"
+                    onchange="handlePhotoUpload('accountPhotoInput','accountAvatar','accountAvatarInitials')" />
+                <label for="accountPhotoInput" class="change-photo-link">Change photo</label>
+            </div>
+        </div>
+
+        <div class="account-tabs">
+            <button class="acc-tab active" onclick="switchTab(this, 'profile')">Profile</button>
+            <button class="acc-tab" onclick="switchTab(this, 'bookings')">Bookings</button>
+        </div>
+
+        <!-- PROFILE TAB -->
+        <div class="tab-content" id="tab-profile">
+            <div class="form-card">
+                <h2>Personal information</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Full name</label>
+                        <input type="text" id="editName" value="Mona Tarek" />
+                    </div>
+                    <div class="form-group">
+                        <label>Email address</label>
+                        <input type="email" id="editEmail" value="mona@email.com" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Phone / WhatsApp</label>
+                        <input type="tel" id="editPhone" value="+90 555 123 4567" />
+                    </div>
+                    <div class="form-group">
+                        <label>City</label>
+                        <input type="text" id="editCity" value="Istanbul" />
+                    </div>
+                </div>
+                <button class="btn-main" style="max-width:200px" onclick="saveProfile()">Save changes</button>
+            </div>
+
+            <div class="form-card" style="margin-top:20px">
+                <h2>Change password</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Current password</label>
+                        <input type="password" id="currentPass" placeholder="••••••••" />
+                    </div>
+                    <div class="form-group">
+                        <label>New password</label>
+                        <input type="password" id="newPass" placeholder="••••••••" />
+                    </div>
+                </div>
+                <button class="btn-main" style="max-width:200px" onclick="changePassword()">Update password</button>
+            </div>
+        </div>
+
+        <!-- BOOKINGS TAB -->
+        <div class="tab-content" id="tab-bookings" style="display:none">
+            <div class="bookings-list" id="bookingsList"></div>
+            <p class="no-results" id="noBookings" style="display:none">You have not contacted any professionals yet.</p>
+        </div>
+
+    </section>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

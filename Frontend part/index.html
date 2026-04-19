@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HomeFix – Home Services</title>
+    <link rel="stylesheet" href="style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@600;700&display=swap"
+        rel="stylesheet" />
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="nav">
+        <div class="logo">Home<span>Fix</span></div>
+        <div class="nav-btns">
+            <button class="btn-outline" onclick="openModal('login')">Log in</button>
+            <button class="btn-solid" onclick="openModal('register')">Get Started</button>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">⚡ Trusted by 12,000+ homeowners</div>
+            <h1>Home services,<br /><span>done right.</span></h1>
+            <p>Find skilled professionals for cleaning, plumbing, electrical work, painting, carpentry, moving and more
+                — all in one place.</p>
+
+            <div class="hero-tags">
+                <span>🧹 Cleaning</span>
+                <span>🔧 Plumbing</span>
+                <span>⚡ Electrical</span>
+                <span>🎨 Painting</span>
+                <span>🪚 Carpentry</span>
+                <span>📦 Moving</span>
+            </div>
+        </div>
+        <div class="hero-visual">
+
+
+            <div class="hero-card" id="hero-emp-1">
+                <div class="hc-avatar" id="hero-emp-1-initials">AK</div>
+                <div class="hc-info">
+                    <strong id="hero-emp-1-name">Ahmed K.</strong>
+                    <span id="hero-emp-1-service">Plumber · ⭐ 4.9</span>
+                </div>
+                <div class="hc-badge" id="hero-emp-1-status">Available</div>
+            </div>
+            <div class="hero-card" id="hero-emp-2">
+                <div class="hc-avatar teal" id="hero-emp-2-initials">SR</div>
+                <div class="hc-info">
+                    <strong id="hero-emp-2-name">Sara R.</strong>
+                    <span id="hero-emp-2-service">Electrician · ⭐ 4.8</span>
+                </div>
+                <div class="hc-badge" id="hero-emp-2-status">Available</div>
+            </div>
+            <div class="hero-card" id="hero-emp-3">
+                <div class="hc-avatar amber" id="hero-emp-3-initials">MN</div>
+                <div class="hc-info">
+                    <strong id="hero-emp-3-name">Mohamed N.</strong>
+                    <span id="hero-emp-3-service">Painter · ⭐ 4.7</span>
+                </div>
+                <div class="hc-badge" id="hero-emp-3-status">Available</div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- SERVICES -->
+    <section class="services" id="services">
+        <div class="section-header">
+            <h2>Our Services</h2>
+            <p>Everything your home needs, one platform</p>
+        </div>
+        <div class="cards">
+            <div class="card" onclick="fillSearch('Cleaning')">
+                <div class="card-icon">🧹</div>
+                <h3>Cleaning</h3>
+                <p>Deep clean, regular, move-out</p>
+            </div>
+            <div class="card" onclick="fillSearch('Plumbing')">
+                <div class="card-icon">🔧</div>
+                <h3>Plumbing</h3>
+                <p>Leaks, pipes, installations</p>
+            </div>
+            <div class="card" onclick="fillSearch('Electrical')">
+                <div class="card-icon">⚡</div>
+                <h3>Electrical</h3>
+                <p>Wiring, outlets, panels</p>
+            </div>
+            <div class="card" onclick="fillSearch('Painting')">
+                <div class="card-icon">🎨</div>
+                <h3>Painting</h3>
+                <p>Interior, exterior, touch-ups</p>
+            </div>
+            <div class="card" onclick="fillSearch('Carpentry')">
+                <div class="card-icon">🪚</div>
+                <h3>Carpentry</h3>
+                <p>Furniture, doors, custom work</p>
+            </div>
+            <div class="card" onclick="fillSearch('Moving')">
+                <div class="card-icon">📦</div>
+                <h3>Moving</h3>
+                <p>Packing, transport, unpacking</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="how">
+        <div class="section-header">
+            <h2>How it works</h2>
+            <p>Book a pro in 3 simple steps</p>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <h4>Search a service</h4>
+                <p>Browse by category or search for what you need</p>
+            </div>
+            <div class="step-arrow">→</div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <h4>Pick a professional</h4>
+                <p>View profiles, ratings,and request a service directly </p>
+            </div>
+            <div class="step-arrow">→</div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <h4>Rate & review</h4>
+                <p>After the job, leave a rating to help others choose</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="stats">
+        <div class="stat"><strong>12,000+</strong><span>Happy clients</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><strong>850+</strong><span>Verified pros</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><strong>6</strong><span>Service types</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><strong>4.8 ⭐</strong><span>Avg. rating</span></div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+        <h2>Ready to get started?</h2>
+        <p>Join thousands of homeowners who trust HomeFix</p>
+        <div class="cta-btns">
+            <button class="btn-cta-white" onclick="openModal('register')">Create free account</button>
+            <button class="btn-cta-ghost" onclick="openModal('login')">Already have an account</button>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-logo">Home<span>Fix</span></div>
+        <p>© 2026 HomeFix. All rights reserved.</p>
+    </footer>
+
+    <!-- MODAL OVERLAY -->
+    <div class="overlay" id="overlay" onclick="closeModalOutside(event)">
+        <div class="modal" id="modal">
+
+            <!-- LOGIN FORM -->
+            <div id="loginForm">
+                <button class="close-btn" onclick="closeModal()">✕</button>
+                <h2>Welcome back</h2>
+                <p class="modal-sub">Log in to your account</p>
+                <div class="role-tabs">
+                    <div class="role-tab active" onclick="selectRole(this,'login','user')">User</div>
+                    <div class="role-tab" onclick="selectRole(this,'login','employee')">Employee</div>
+                    <div class="role-tab" onclick="selectRole(this,'login','admin')">Admin</div>
+                </div>
+                <input type="email" placeholder="Email address" id="loginEmail" />
+                <input type="password" placeholder="Password" id="loginPassword" />
+                <!--     <div class="forgot"><a href="#">Forgot password?</a></div> -->
+                <button class="btn-main" onclick="handleLogin()">Log in</button>
+                <p class="switch">Don't have an account? <a onclick="switchModal('register')">Sign up</a></p>
+            </div>
+
+            <!-- REGISTER FORM -->
+            <div id="registerForm" style="display:none">
+                <button class="close-btn" onclick="closeModal()">✕</button>
+                <h2>Create account</h2>
+                <p class="modal-sub">Join HomeFix today</p>
+                <div class="role-tabs">
+                    <div class="role-tab active" onclick="selectRole(this,'register','user')">User</div>
+                    <div class="role-tab" onclick="selectRole(this,'register','employee')">Employee</div>
+                </div>
+                <div id="employeeExtra" style="display:none">
+                    <select id="serviceType">
+                        <option value="">Select your service type</option>
+                        <option>Cleaning</option>
+                        <option>Plumbing</option>
+                        <option>Electrical</option>
+                        <option>Painting</option>
+                        <option>Carpentry</option>
+                        <option>Moving</option>
+                    </select>
+                </div>
+                <div class="photo-upload">
+                    <div class="photo-preview-circle" id="regAvatarPreview">
+                        <span id="regAvatarInitials">📷</span>
+                    </div>
+                    <input type="file" id="regPhotoInput" accept="image/*" style="display:none"
+                        onchange="handlePhotoUpload('regPhotoInput','regAvatarPreview','regAvatarInitials')" />
+                    <label for="regPhotoInput" class="photo-label">Upload photo</label>
+                </div>
+                <input type="text" placeholder="Full name" id="regName" />
+                <input type="email" placeholder="Email address" id="regEmail" />
+                <input type="tel" placeholder="Phone / WhatsApp number" id="regPhone" />
+                <input type="password" placeholder="Password" id="regPassword" />
+                <button class="btn-main" onclick="handleRegister()">Create account</button>
+                <p class="switch">Already have an account? <a onclick="switchModal('login')">Log in</a></p>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
