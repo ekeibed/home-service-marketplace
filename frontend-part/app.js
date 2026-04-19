@@ -12,15 +12,56 @@ let pendingWorkerApplications = HF && HF.initialPendingWorkerApplications
     ? HF.initialPendingWorkerApplications.map(w => ({ ...w }))
     : [];
 
+/** True on admin-panel.html only — mock gate, not real authentication */
+const isAdmin = typeof document !== 'undefined' && document.body && document.body.classList.contains('page-admin');
+
 // --- Modal state ---
 let currentLoginRole = 'user';
 let currentRegisterRole = 'user';
 
+function setLoginError(message) {
+    const el = document.getElementById('loginError');
+    if (!el) {
+        if (message) alert(message);
+        return;
+    }
+    if (!message) {
+        el.textContent = '';
+        el.hidden = true;
+        return;
+    }
+    el.textContent = message;
+    el.hidden = false;
+}
+
+function resetLoginFormToDefaults() {
+    currentLoginRole = 'user';
+    const loginForm = document.getElementById('loginForm');
+    if (!loginForm) return;
+    loginForm.querySelectorAll('.role-tab').forEach((tab, i) => {
+        tab.classList.toggle('active', i === 0);
+    });
+    const email = document.getElementById('loginEmail');
+    const pass = document.getElementById('loginPassword');
+    if (email) {
+        email.placeholder = 'Email address';
+    }
+    if (pass) {
+        pass.placeholder = 'Password';
+    }
+    setLoginError('');
+}
+
 // Open modal: 'login' or 'register'
 function openModal(type) {
     const overlay = document.getElementById('overlay');
+    if (!overlay) {
+        console.error('HomeFix: #overlay not found (open index.html from the frontend-part folder).');
+        return;
+    }
     overlay.classList.add('active');
     showForm(type);
+    if (type === 'login') resetLoginFormToDefaults();
 }
 
 // Close modal
@@ -38,13 +79,17 @@ function closeModalOutside(event) {
 
 // Show login or register form
 function showForm(type) {
-    document.getElementById('loginForm').style.display = type === 'login' ? 'block' : 'none';
-    document.getElementById('registerForm').style.display = type === 'register' ? 'block' : 'none';
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    if (!loginForm || !registerForm) return;
+    loginForm.style.display = type === 'login' ? 'block' : 'none';
+    registerForm.style.display = type === 'register' ? 'block' : 'none';
 }
 
 // Switch between login and register
 function switchModal(type) {
     showForm(type);
+    if (type === 'login') setLoginError('');
 }
 
 // Role tab selection
@@ -70,58 +115,55 @@ function selectRole(el, formType, role) {
         currentRegisterRole = role;
         // Show or hide employee extra field
         const extra = document.getElementById('employeeExtra');
-        extra.style.display = role === 'employee' ? 'block' : 'none';
+        if (extra) extra.style.display = role === 'employee' ? 'block' : 'none';
     }
 }
 
 // --- Login handler ---
 function handleLogin() {
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
+    const emailEl = document.getElementById('loginEmail');
+    const passEl = document.getElementById('loginPassword');
+    if (!emailEl || !passEl) return;
+
+    const activeTab = document.querySelector('#loginForm .role-tab.active');
+    if (activeTab && activeTab.getAttribute('data-login-role')) {
+        currentLoginRole = activeTab.getAttribute('data-login-role');
+    }
+
+    const email = emailEl.value.trim();
+    const password = passEl.value.trim();
+
+    setLoginError('');
 
     if (!email || !password) {
-        alert('Please fill in all fields.');
+        setLoginError('Please fill in both email and password.');
         return;
     }
-    /* if (!isValidEmail(email)) {
-        alert('Please enter a valid email address.');
-        return;
-    } */
     if (currentLoginRole !== 'admin' && !isValidEmail(email)) {
-        alert('Please enter a valid email address.');
+        setLoginError('Please enter a valid email address (e.g. you@test.com).');
         return;
     }
     // TODO: Connect to backend authentication
     console.log('Login attempt:', { email, role: currentLoginRole });
 
-    // Redirect based on role (placeholder — replace with real auth flow)
-    /* switch (currentLoginRole) {
-        case 'user':
-            alert(`Welcome back! Redirecting to user dashboard...`);
-            // window.location.href = 'user-dashboard.html';
-            break;
-        case 'employee':
-            alert(`Welcome back! Redirecting to employee dashboard...`);
-            // window.location.href = 'employee-dashboard.html';
-            break;
-        case 'admin':
-            alert(`Welcome, Admin! Redirecting to admin panel...`);
-            // window.location.href = 'admin-panel.html';
-            break;
-    } */
+    let target = '';
     switch (currentLoginRole) {
         case 'user':
-            window.location.href = 'user-dashboard.html';
+            target = 'user-dashboard.html';
             break;
         case 'employee':
-            window.location.href = 'employee-dashboard.html';
+            target = 'employee-dashboard.html';
             break;
         case 'admin':
-            window.location.href = 'admin-panel.html';
+            target = 'admin-panel.html';
             break;
+        default:
+            setLoginError('Please choose User, Employee, or Admin above.');
+            return;
     }
 
     closeModal();
+    window.location.assign(target);
 }
 
 // --- Register handler ---
@@ -179,6 +221,8 @@ document.addEventListener('keydown', function (e) {
     closeModal();
     const ro = document.getElementById('requestOverlay');
     if (ro && ro.classList.contains('active')) closeRequestModal();
+    const adminOv = document.getElementById('adminDetailOverlay');
+    if (adminOv && adminOv.classList.contains('active')) closeAdminDetailModal();
 });
 // === USER DASHBOARD ===
 
@@ -190,13 +234,13 @@ function renderEmployees(list) {
 
     if (list.length === 0) {
         grid.innerHTML = '';
-        noResults.style.display = 'block';
-        countEl.textContent = 'No professionals found';
+        if (noResults) noResults.style.display = 'block';
+        if (countEl) countEl.textContent = 'No professionals found';
         return;
     }
 
-    noResults.style.display = 'none';
-    countEl.textContent = `Showing ${list.length} professional${list.length > 1 ? 's' : ''}`;
+    if (noResults) noResults.style.display = 'none';
+    if (countEl) countEl.textContent = `Showing ${list.length} professional${list.length > 1 ? 's' : ''}`;
 
 
 
@@ -418,6 +462,7 @@ function markCompleted(id) {
     booking.status = 'completed';
     // TODO: send to backend
     renderBookings();
+    refreshAdminViews();
 }
 
 function saveProfile() {
@@ -481,6 +526,7 @@ function cancelRequest(id) {
     booking.status = 'cancelled';
     // TODO: send to backend
     renderBookings();
+    refreshAdminViews();
 }
 
 
@@ -598,7 +644,7 @@ function approveWorkerApplication(id) {
     if (i === -1) return;
     pendingWorkerApplications.splice(i, 1);
     // TODO: POST admin/approve-worker
-    renderPendingWorkers();
+    refreshAdminViews();
     alert('Worker approved. They can now sign in as an employee.');
 }
 
@@ -606,10 +652,324 @@ function rejectWorkerApplication(id) {
     const i = pendingWorkerApplications.findIndex(w => w.id === id);
     if (i === -1) return;
     pendingWorkerApplications.splice(i, 1);
-    renderPendingWorkers();
+    refreshAdminViews();
     alert('Application rejected.');
 }
 
-if (document.getElementById('adminPendingList')) {
-    renderPendingWorkers();
+let adminBookingsFilter = 'all';
+let adminBookingsSearch = '';
+let adminUsersSearch = '';
+let adminUsersList = [];
+
+function closeAdminDetailModal() {
+    const el = document.getElementById('adminDetailOverlay');
+    if (el) el.classList.remove('active');
 }
+
+function closeAdminDetailOutside(event) {
+    const el = document.getElementById('adminDetailOverlay');
+    if (el && event.target === el) closeAdminDetailModal();
+}
+
+function openAdminDetailModal(html) {
+    const body = document.getElementById('adminDetailModalBody');
+    const ov = document.getElementById('adminDetailOverlay');
+    if (!body || !ov) return;
+    body.innerHTML = html;
+    ov.classList.add('active');
+}
+
+function adminBookingStatusLabel(status) {
+    if (status === 'confirmed') return 'Confirmed';
+    return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function adminBookingMatchesFilter(b) {
+    if (adminBookingsFilter === 'all') return true;
+    if (adminBookingsFilter === 'completed') return b.status === 'completed';
+    if (adminBookingsFilter === 'cancelled') return b.status === 'cancelled';
+    if (adminBookingsFilter === 'pending') return b.status === 'pending' || b.status === 'confirmed';
+    return true;
+}
+
+function adminBookingMatchesSearch(b) {
+    if (!adminBookingsSearch) return true;
+    const q = adminBookingsSearch;
+    const customer = (b.customer || '').toLowerCase();
+    const pro = (b.name || '').toLowerCase();
+    const svc = (b.service || '').toLowerCase();
+    const date = (b.date || '').toLowerCase();
+    return customer.includes(q) || pro.includes(q) || svc.includes(q) || date.includes(q);
+}
+
+function findBookingByAdminId(bookingId) {
+    return fakeBookings.find(b => String(b.bookingId) === String(bookingId));
+}
+
+function adminMarkBookingCompleted(bookingId) {
+    const b = findBookingByAdminId(bookingId);
+    if (!b) return;
+    b.status = 'completed';
+    closeAdminDetailModal();
+    refreshAdminViews();
+    if (document.getElementById('bookingsList')) renderBookings();
+}
+
+function adminCancelBooking(bookingId) {
+    const b = findBookingByAdminId(bookingId);
+    if (!b) return;
+    b.status = 'cancelled';
+    closeAdminDetailModal();
+    refreshAdminViews();
+    if (document.getElementById('bookingsList')) renderBookings();
+}
+
+function openAdminBookingModal(bookingId) {
+    const b = findBookingByAdminId(bookingId);
+    if (!b) return;
+    const bid = b.bookingId != null ? b.bookingId : b.id;
+    const canComplete = b.status !== 'completed' && b.status !== 'cancelled';
+    const canCancel = b.status !== 'cancelled';
+    const actions = `
+      <div class="admin-modal-actions">
+        ${canComplete ? `<button type="button" class="btn-main" onclick="adminMarkBookingCompleted(${bid})">Mark completed</button>` : ''}
+        ${canCancel ? `<button type="button" class="btn-reject-worker" onclick="adminCancelBooking(${bid})">Cancel booking</button>` : ''}
+        <a class="btn-outline" style="display:inline-block;text-decoration:none;text-align:center;padding:9px 16px;border-radius:var(--radius-sm);" href="employee-profile.html?id=${b.id}">View professional</a>
+      </div>`;
+    openAdminDetailModal(`
+      <h2>Booking #${bid}</h2>
+      <p class="modal-sub">${adminBookingStatusLabel(b.status)}</p>
+      <div class="admin-modal-grid">
+        <div><span class="admin-modal-label">Service</span><div>${b.service}</div></div>
+        <div><span class="admin-modal-label">Customer</span><div>${b.customer || '—'}</div></div>
+        <div><span class="admin-modal-label">Professional</span><div>${b.name}</div></div>
+        <div><span class="admin-modal-label">Date</span><div>${b.date}</div></div>
+      </div>
+      ${actions}
+    `);
+}
+
+function buildAdminUsersFromMock() {
+    if (!HF) return [];
+    const out = [];
+    const seenCustomer = new Set();
+
+    (HF.employees || []).forEach(e => {
+        out.push({
+            uid: 'worker-' + e.id,
+            name: e.name,
+            role: 'Worker',
+            blocked: false,
+            detail: e.service + ' · ' + e.area,
+        });
+    });
+
+    (HF.initialCustomerBookings || []).forEach(b => {
+        const c = b.customer || 'Customer';
+        const key = c.toLowerCase();
+        if (seenCustomer.has(key)) return;
+        seenCustomer.add(key);
+        const slug = key.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'user';
+        out.push({ uid: 'customer-' + slug, name: c, role: 'Customer', blocked: false });
+    });
+
+    (HF.initialWorkerRequests || []).forEach(r => {
+        const c = r.customer;
+        const key = c.toLowerCase();
+        if (seenCustomer.has(key)) return;
+        seenCustomer.add(key);
+        const slug = key.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'user';
+        out.push({ uid: 'customer-' + slug, name: c, role: 'Customer', blocked: false });
+    });
+
+    (HF.initialPendingWorkerApplications || []).forEach(w => {
+        out.push({
+            uid: 'applicant-' + w.id,
+            name: w.name,
+            role: 'Applicant',
+            blocked: false,
+            detail: w.service + ' · ' + w.email,
+        });
+    });
+
+    out.push({ uid: 'admin-demo', name: 'System Administrator', role: 'Admin', blocked: false, detail: 'Demo account' });
+    return out.map(u => ({ ...u }));
+}
+
+function openAdminUserModal(uid) {
+    const u = adminUsersList.find(x => x.uid === uid);
+    if (!u) return;
+    const blocked = u.blocked;
+    openAdminDetailModal(`
+      <h2>${u.name}</h2>
+      <p class="modal-sub">${u.role}${u.detail ? ' · ' + u.detail : ''}</p>
+      <p class="panel-hint">Status: <strong>${blocked ? 'Blocked' : 'Active'}</strong></p>
+      <div class="admin-modal-actions">
+        <button type="button" class="btn-main" onclick='toggleAdminUserBlock(${JSON.stringify(uid)}, ${!blocked})'>${blocked ? 'Unblock user' : 'Block user'}</button>
+      </div>
+    `);
+}
+
+function toggleAdminUserBlock(uid, nextBlocked) {
+    const u = adminUsersList.find(x => x.uid === uid);
+    if (!u) return;
+    u.blocked = !!nextBlocked;
+    closeAdminDetailModal();
+    refreshAdminViews();
+}
+
+function adminUserMatchesSearch(u) {
+    if (!adminUsersSearch) return true;
+    const q = adminUsersSearch;
+    return u.name.toLowerCase().includes(q) || u.role.toLowerCase().includes(q);
+}
+
+function renderAdminDashboardStats() {
+    const el = document.getElementById('adminDashboardStats');
+    if (!el) return;
+
+    const bookingsTotal = fakeBookings.length;
+    const bookingsOpen = fakeBookings.filter(b => b.status === 'pending' || b.status === 'confirmed').length;
+    const workerPending = workerIncomingRequests.filter(r => r.status === 'pending').length;
+    const appsPending = pendingWorkerApplications.length;
+    const usersActive = adminUsersList.filter(u => !u.blocked).length;
+    const usersBlocked = adminUsersList.filter(u => u.blocked).length;
+
+    el.innerHTML = `
+    <div class="admin-stat-card"><span class="admin-stat-value">${bookingsTotal}</span><span class="admin-stat-label">Bookings (total)</span></div>
+    <div class="admin-stat-card"><span class="admin-stat-value">${bookingsOpen}</span><span class="admin-stat-label">Open bookings</span></div>
+    <div class="admin-stat-card"><span class="admin-stat-value">${workerPending}</span><span class="admin-stat-label">Worker requests (pending)</span></div>
+    <div class="admin-stat-card"><span class="admin-stat-value">${appsPending}</span><span class="admin-stat-label">Pending applications</span></div>
+    <div class="admin-stat-card"><span class="admin-stat-value">${usersActive}</span><span class="admin-stat-label">Active users</span></div>
+    <div class="admin-stat-card"><span class="admin-stat-value">${usersBlocked}</span><span class="admin-stat-label">Blocked users</span></div>
+  `;
+}
+
+function renderAdminBookingsTable() {
+    const tbody = document.getElementById('adminBookingsTableBody');
+    const none = document.getElementById('adminNoBookings');
+    const table = document.getElementById('adminBookingsTable');
+    if (!tbody) return;
+
+    const rows = fakeBookings.filter(b => adminBookingMatchesFilter(b) && adminBookingMatchesSearch(b));
+    if (rows.length === 0) {
+        tbody.innerHTML = '';
+        if (none) none.style.display = 'block';
+        if (table) table.style.display = 'none';
+        return;
+    }
+    if (none) none.style.display = 'none';
+    if (table) table.style.display = '';
+
+    tbody.innerHTML = rows.map(b => {
+        const bid = b.bookingId != null ? b.bookingId : b.id;
+        const st = adminBookingStatusLabel(b.status);
+        const canComplete = b.status !== 'completed' && b.status !== 'cancelled';
+        const canCancel = b.status !== 'cancelled';
+        return `
+      <tr class="admin-table-row" onclick="openAdminBookingModal(${bid})">
+        <td>${b.service}</td>
+        <td>${b.customer || '—'}</td>
+        <td>${b.name}</td>
+        <td><span class="booking-status ${b.status}">${st}</span></td>
+        <td>${b.date}</td>
+        <td class="admin-table-actions" onclick="event.stopPropagation()">
+          ${canComplete ? `<button type="button" class="btn-complete" onclick="adminMarkBookingCompleted(${bid})">Complete</button>` : ''}
+          ${canCancel ? `<button type="button" class="btn-cancel" onclick="adminCancelBooking(${bid})">Cancel</button>` : ''}
+        </td>
+      </tr>`;
+    }).join('');
+}
+
+function renderAdminUsersTable() {
+    const tbody = document.getElementById('adminUsersTableBody');
+    const none = document.getElementById('adminNoUsers');
+    const table = document.getElementById('adminUsersTable');
+    if (!tbody) return;
+
+    const rows = adminUsersList.filter(adminUserMatchesSearch);
+    if (rows.length === 0) {
+        tbody.innerHTML = '';
+        if (none) none.style.display = 'block';
+        if (table) table.style.display = 'none';
+        return;
+    }
+    if (none) none.style.display = 'none';
+    if (table) table.style.display = '';
+
+    tbody.innerHTML = rows.map(u => {
+        const statusLabel = u.blocked ? 'Blocked' : 'Active';
+        const statusClass = u.blocked ? 'cancelled' : 'completed';
+        return `
+      <tr class="admin-table-row" onclick='openAdminUserModal(${JSON.stringify(u.uid)})'>
+        <td>${u.name}</td>
+        <td>${u.role}</td>
+        <td><span class="booking-status ${statusClass}">${statusLabel}</span></td>
+        <td class="admin-table-actions" onclick="event.stopPropagation()">
+          <button type="button" class="${u.blocked ? 'btn-complete' : 'btn-reject-worker'}" onclick='toggleAdminUserBlock(${JSON.stringify(u.uid)}, ${!u.blocked})'>${u.blocked ? 'Unblock' : 'Block'}</button>
+        </td>
+      </tr>`;
+    }).join('');
+}
+
+function switchAdminSection(section) {
+    document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-admin-section') === section);
+    });
+    document.querySelectorAll('.admin-section').forEach(sec => {
+        sec.hidden = sec.id !== 'admin-section-' + section;
+    });
+    if (section === 'bookings') renderAdminBookingsTable();
+    if (section === 'users') renderAdminUsersTable();
+}
+
+function rebuildAdminUsersPreservingBlocks() {
+    const prev = new Map(adminUsersList.map(u => [u.uid, u.blocked]));
+    adminUsersList = buildAdminUsersFromMock().map(u => ({
+        ...u,
+        blocked: prev.has(u.uid) ? !!prev.get(u.uid) : false,
+    }));
+}
+
+function refreshAdminViews() {
+    if (!document.getElementById('adminShell')) return;
+    rebuildAdminUsersPreservingBlocks();
+    renderAdminDashboardStats();
+    renderPendingWorkers();
+    renderAdminBookingsTable();
+    renderAdminUsersTable();
+}
+
+function initAdminPage() {
+    if (!isAdmin || !document.getElementById('adminShell')) return;
+
+    document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchAdminSection(btn.getAttribute('data-admin-section')));
+    });
+
+    const bf = document.getElementById('adminBookingFilter');
+    if (bf) {
+        bf.addEventListener('change', () => {
+            adminBookingsFilter = bf.value;
+            renderAdminBookingsTable();
+        });
+    }
+    const bs = document.getElementById('adminBookingSearch');
+    if (bs) {
+        bs.addEventListener('input', () => {
+            adminBookingsSearch = bs.value.trim().toLowerCase();
+            renderAdminBookingsTable();
+        });
+    }
+    const us = document.getElementById('adminUserSearch');
+    if (us) {
+        us.addEventListener('input', () => {
+            adminUsersSearch = us.value.trim().toLowerCase();
+            renderAdminUsersTable();
+        });
+    }
+
+    refreshAdminViews();
+}
+
+initAdminPage();

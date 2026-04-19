@@ -37,11 +37,11 @@
             { author: 'Hassan R.', stars: 5, date: 'Dec 2024', text: 'Best plumber I have hired. Will call again.' },
         ],
 
-        /** My Account → Bookings; id should match an employees[].id for View Profile */
+        /** My Account → Bookings; id = worker id for View Profile; bookingId = stable row id for admin */
         initialCustomerBookings: [
-            { id: 1, name: 'Ahmed Karim', initials: 'AK', service: 'Plumbing', date: 'April 10, 2025', status: 'completed' },
-            { id: 4, name: 'Lina Hamdan', initials: 'LH', service: 'Cleaning', date: 'April 3, 2025', status: 'confirmed' },
-            { id: 2, name: 'Sara Reyes', initials: 'SR', service: 'Electrical', date: 'March 28, 2025', status: 'pending' },
+            { bookingId: 9001, id: 1, name: 'Ahmed Karim', initials: 'AK', customer: 'Mona Tarek', service: 'Plumbing', date: 'April 10, 2025', status: 'completed' },
+            { bookingId: 9002, id: 4, name: 'Lina Hamdan', initials: 'LH', customer: 'Karim Bassam', service: 'Cleaning', date: 'April 3, 2025', status: 'confirmed' },
+            { bookingId: 9003, id: 2, name: 'Sara Reyes', initials: 'SR', customer: 'Nadia Salem', service: 'Electrical', date: 'March 28, 2025', status: 'pending' },
         ],
 
         /** Professional dashboard — status: pending | accepted | rejected */
