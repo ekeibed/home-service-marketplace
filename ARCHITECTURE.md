@@ -569,11 +569,11 @@ Overall, the system provides acceptable performance for its intended use and can
 
 This section defines the non-functional requirements that the system architecture must satisfy to ensure high-quality service and a positive user experience. These attributes serve as the benchmark for evaluating the success of the Home Service System’s architectural design beyond its basic functional capabilities.
 
-* **Availability** The system must maintain high uptime to ensure users can reliably book services and manage appointments without interruption.  
-    **Scenario:** If a system fault causes a database connection failure in the Data Layer during normal operation, the system must notify the user of the error within 5 seconds.
+* **Availability** The system must maintain 99.9% uptime to ensure users can reliably book services and manage appointments without interruption.  
+    **Scenario:** If a system fault causes a database connection failure in the Data Layer during normal operation, the system must notify the user of the error within 5 seconds and attempt to restore the connection automatically within 30 seconds.
 
 * **Performance** The responsiveness of the web application is critical for user retention and efficient service matching.  
-    **Scenario:** If there are 20 concurrent clients performing search requests through the Web Interface under normal operation, the system must display the results in less than 1 second.
+    **Scenario:** If there are 30 concurrent clients performing search requests through the Web Interface under normal operation, the system must display the results in less than 1 second.
 
 * **Security** The system must ensure that only registered users with valid credentials can access private account features.  
     **Scenario:** If a user attempts to log in with an incorrect password through the Login Page during normal operation, the system must deny access and display an "Invalid Credentials" error message in less than 2 seconds.
@@ -582,13 +582,13 @@ This section defines the non-functional requirements that the system architectur
     **Scenario:** If a developer needs to add a new service category to the System Configuration during development time, the system must incorporate the change with less than 1 hour of manual effort.
 
 * **Usability** The interface must be intuitive to minimize the learning curve for both customers and service providers.  
-    **Scenario:** If a new customer performs a first-time booking task via the User Interface under normal operation, the user must successfully complete the workflow in less than 6 minutes.
+    **Scenario:** If a new customer performs a first-time booking task via the User Interface under normal operation, the user must successfully complete the workflow within 3 minutes.
 
 * **Maintainability** The codebase must be structured to reduce technical debt and simplify the debugging process for developers.  
-    **Scenario:** If a developer identifies a logic fault within the Notification Module during the maintenance phase, the developer must be able to isolate and repair the bug with zero side effects on other system modules.
+    **Scenario:** If a developer identifies a logic fault within the Notification Module during the maintenance phase, the developer must be able to isolate and  repair the bug with minimal side effects on other system modules.
 
-* **Testability** The design must support simple testing to ensure the system works correctly before any new deployment.  
-    **Scenario:** During normal testing, if a developer runs a simple test on the booking feature in the system, the system displays the result in the console immediately within a few seconds.
+* **Testability** The design must support automated testing to ensure the system works correctly before any new deployment.  
+    **Scenario:** During development, when a developer executes a test script for the booking feature , the system must automatically validate the business logic  and generate a Pass/Fail status report in the terminal in less than 5 seconds .
 
 ---
 
