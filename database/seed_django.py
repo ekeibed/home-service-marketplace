@@ -1,18 +1,27 @@
 """
 seed_django.py — HomeFix Database Seed Script
 ==============================================
-Run with:
+Idempotent: safe to re-run — existing rows are left alone, only missing ones
+are created. Invoked automatically by start.bat / start.sh on the first run.
+
+To run manually (with UTF-8 forced, required on Windows for Turkish chars):
   cd backend
-  python manage.py shell < ../database/seed_django.py
+  PYTHONUTF8=1 venv\\Scripts\\python -c "import django, os; \\
+      os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings'); \\
+      django.setup(); \\
+      exec(open('../database/seed_django.py', encoding='utf-8').read())"
 
 Creates:
-  - 7 service categories
+  - 7 service categories (Electrician, Plumber, Cleaner, Painter, Carpenter,
+    Moving, Gardener)
   - 1 admin account
-  - 32 realistic customer users (Turkish names & phone numbers)
-  - 30 approved worker users with full profiles across all categories
-  - 20 sample service requests linking customers to workers
-  - Booking records for accepted / completed requests
-  - Review records for completed bookings
+  - 32 realistic customers spread across 9 Turkish cities (Istanbul, Ankara,
+    Izmir, Bursa, Antalya, Konya, Eskişehir, Trabzon, Gaziantep)
+  - 30 approved worker users with full profiles, primarily across Istanbul
+    districts plus a handful in other major cities
+  - ~21 sample service requests (completed / accepted / pending / cancelled)
+  - A Booking row for every accepted or completed request
+  - A realistic category-matched Review on every completed booking
 """
 
 import random
@@ -64,43 +73,61 @@ else:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CUSTOMER USERS — 32 realistic Turkish customers
+# CUSTOMER USERS — 32 customers across 9 cities
+#   Istanbul (14), Ankara (4), Izmir (4), Bursa (3), Antalya (3),
+#   Konya (1), Eskişehir (1), Trabzon (1), Gaziantep (1)
+#
+# Area codes in phone numbers roughly follow real Turkish GSM blocks
+# (532/533/534/535/536 = Turkcell, 542/543 = Vodafone, 554/555 = Avea/Türk
+# Telekom) — no guarantees on specific number validity, these are demo data.
 # Password for all: Customer1234!
 # ─────────────────────────────────────────────────────────────────────────────
 customers_data = [
     # (username, email, first_name, last_name, phone, address)
+
+    # ── Istanbul (14) ────────────────────────────────────────────────────────
     ("ayse_kaya",       "ayse.kaya@gmail.com",          "Ayşe",      "Kaya",       "+90 532 114 2233", "Bağdat Cd. 45, Kadıköy, Istanbul"),
     ("mehmet_celik",    "mehmet.celik@hotmail.com",      "Mehmet",    "Çelik",      "+90 533 225 3344", "Barbaros Blv. 12, Beşiktaş, Istanbul"),
     ("fatma_yildiz",    "fatma.yildiz@gmail.com",        "Fatma",     "Yıldız",     "+90 534 336 4455", "Atatürk Cd. 78, Üsküdar, Istanbul"),
     ("emre_demir",      "emre.demir@outlook.com",        "Emre",      "Demir",      "+90 535 447 5566", "Halaskargazi Cd. 23, Şişli, Istanbul"),
-    ("zeynep_arslan",   "zeynep.arslan@gmail.com",       "Zeynep",    "Arslan",     "+90 536 558 6677", "İnönü Cd. 9, Beyoğlu, Istanbul"),
     ("ali_ozturk",      "ali.ozturk@ymail.com",          "Ali",       "Öztürk",     "+90 537 669 7788", "Mühürdar Cd. 56, Kadıköy, Istanbul"),
     ("selin_sahin",     "selin.sahin@gmail.com",         "Selin",     "Şahin",      "+90 538 770 8899", "Nispetiye Cd. 34, Beşiktaş, Istanbul"),
     ("burak_yilmaz",    "burak.yilmaz@hotmail.com",      "Burak",     "Yılmaz",     "+90 539 881 9900", "Ordu Cd. 67, Fatih, Istanbul"),
     ("esra_erdogan",    "esra.erdogan@gmail.com",        "Esra",      "Erdoğan",    "+90 542 112 0011", "Paşa Sk. 3, Ümraniye, Istanbul"),
     ("can_aydin",       "can.aydin@ymail.com",           "Can",       "Aydın",      "+90 543 223 1122", "Recep Sk. 14, Maltepe, Istanbul"),
     ("neslihan_coban",  "neslihan.coban@gmail.com",      "Neslihan",  "Çoban",      "+90 544 334 2233", "Sadi Yaver Atakan Cd. 8, Ataşehir, Istanbul"),
-    ("volkan_kurt",     "volkan.kurt@outlook.com",       "Volkan",    "Kurt",       "+90 545 445 3344", "Türkocağı Cd. 19, Taksim, Istanbul"),
-    ("pinar_dogan",     "pinar.dogan@gmail.com",         "Pınar",     "Doğan",      "+90 546 556 4455", "Uğur Mumcu Cd. 42, Mecidiyeköy, Istanbul"),
-    ("serkan_aksoy",    "serkan.aksoy@hotmail.com",      "Serkan",    "Aksoy",      "+90 547 667 5566", "Vatan Cd. 88, Bakırköy, Istanbul"),
+    ("volkan_kurt",     "volkan.kurt@outlook.com",       "Volkan",    "Kurt",       "+90 545 445 3344", "Türkocağı Cd. 19, Beyoğlu, Istanbul"),
     ("gamze_polat",     "gamze.polat@gmail.com",         "Gamze",     "Polat",      "+90 548 778 6677", "Yıldız Cd. 27, Çengelköy, Istanbul"),
     ("berk_ozkan",      "berk.ozkan@gmail.com",          "Berk",      "Özkan",      "+90 549 889 7788", "Fenerbahçe Cd. 11, Kadıköy, Istanbul"),
-    ("merve_karaca",    "merve.karaca@hotmail.com",      "Merve",     "Karaca",     "+90 552 990 8899", "Ihlamur Cd. 33, Beşiktaş, Istanbul"),
     ("ahmet_kara",      "ahmet.kara@outlook.com",        "Ahmet",     "Kara",       "+90 553 101 9900", "Moda Cd. 55, Kadıköy, Istanbul"),
-    ("sibel_aydin",     "sibel.aydin@gmail.com",         "Sibel",     "Aydın",      "+90 554 212 0011", "Fener Sk. 7, Balat, Istanbul"),
-    ("tarik_sahin",     "tarik.sahin@ymail.com",         "Tarık",     "Şahin",      "+90 555 323 1122", "Şehit Muhtar Cd. 22, Beyoğlu, Istanbul"),
-    ("hande_demir",     "hande.demir@gmail.com",         "Hande",     "Demir",      "+90 556 434 2233", "Levazım Sk. 4, Beşiktaş, Istanbul"),
-    ("oguz_celik",      "oguz.celik@hotmail.com",        "Oğuz",      "Çelik",      "+90 557 545 3344", "Turgut Özal Cd. 91, Esenler, Istanbul"),
-    ("dilek_arslan",    "dilek.arslan@gmail.com",        "Dilek",     "Arslan",     "+90 558 656 4455", "Cevizlibağ Cd. 16, Zeytinburnu, Istanbul"),
-    ("kemal_yilmaz",    "kemal.yilmaz@outlook.com",      "Kemal",     "Yılmaz",     "+90 559 767 5566", "Bağcılar Cd. 38, Bağcılar, Istanbul"),
-    ("ceylan_dogan",    "ceylan.dogan@gmail.com",        "Ceylan",    "Doğan",      "+90 532 878 6677", "Kartal Sk. 5, Kartal, Istanbul"),
-    ("mert_ozdemir",    "mert.ozdemir@ymail.com",        "Mert",      "Özdemir",    "+90 533 989 7788", "Şirinevler Cd. 77, Bahçelievler, Istanbul"),
-    ("seda_polat",      "seda.polat@gmail.com",          "Seda",      "Polat",      "+90 534 090 8899", "Abdi İpekçi Cd. 3, Nişantaşı, Istanbul"),
-    ("ugur_kurt",       "ugur.kurt@hotmail.com",         "Uğur",      "Kurt",       "+90 535 101 9001", "Kennedy Cd. 62, Bakırköy, Istanbul"),
-    ("aylin_kaya",      "aylin.kaya@gmail.com",          "Aylin",     "Kaya",       "+90 536 212 0112", "Bostancı Cd. 29, Kadıköy, Istanbul"),
-    ("enes_yilmaz",     "enes.yilmaz@outlook.com",       "Enes",      "Yılmaz",     "+90 537 323 1223", "Dudullu Cd. 44, Ümraniye, Istanbul"),
-    ("derya_aksoy",     "derya.aksoy@gmail.com",         "Derya",     "Aksoy",      "+90 538 434 2334", "Üçyol Cd. 13, Güngören, Istanbul"),
-    ("murat_ozturk",    "murat.ozturk@ymail.com",        "Murat",     "Öztürk",     "+90 539 545 3445", "Cihangir Cd. 8, Beyoğlu, Istanbul"),
+
+    # ── Ankara (4) ───────────────────────────────────────────────────────────
+    ("zeynep_arslan",   "zeynep.arslan@gmail.com",       "Zeynep",    "Arslan",     "+90 536 558 6677", "Tunalı Hilmi Cd. 92, Çankaya, Ankara"),
+    ("pinar_dogan",     "pinar.dogan@gmail.com",         "Pınar",     "Doğan",      "+90 546 556 4455", "Kızılırmak Cd. 14, Çankaya, Ankara"),
+    ("serkan_aksoy",    "serkan.aksoy@hotmail.com",      "Serkan",    "Aksoy",      "+90 547 667 5566", "Atatürk Blv. 143, Kavaklıdere, Ankara"),
+    ("murat_ozturk",    "murat.ozturk@ymail.com",        "Murat",     "Öztürk",     "+90 539 545 3445", "Eskişehir Yolu 7, Çayyolu, Ankara"),
+
+    # ── Izmir (4) ────────────────────────────────────────────────────────────
+    ("merve_karaca",    "merve.karaca@hotmail.com",      "Merve",     "Karaca",     "+90 552 990 8899", "Kordon Blv. 58, Alsancak, Izmir"),
+    ("tarik_sahin",     "tarik.sahin@ymail.com",         "Tarık",     "Şahin",      "+90 555 323 1122", "Talatpaşa Blv. 36, Alsancak, Izmir"),
+    ("aylin_kaya",      "aylin.kaya@gmail.com",          "Aylin",     "Kaya",       "+90 536 212 0112", "Mithatpaşa Cd. 221, Konak, Izmir"),
+    ("enes_yilmaz",     "enes.yilmaz@outlook.com",       "Enes",      "Yılmaz",     "+90 537 323 1223", "İzmir-Çeşme Yolu 4, Çeşme, Izmir"),
+
+    # ── Bursa (3) ────────────────────────────────────────────────────────────
+    ("sibel_aydin",     "sibel.aydin@gmail.com",         "Sibel",     "Aydın",      "+90 554 212 0011", "Atatürk Cd. 112, Osmangazi, Bursa"),
+    ("oguz_celik",      "oguz.celik@hotmail.com",        "Oğuz",      "Çelik",      "+90 557 545 3344", "Hocahasan Mh. 9, Nilüfer, Bursa"),
+    ("ceylan_dogan",    "ceylan.dogan@gmail.com",        "Ceylan",    "Doğan",      "+90 532 878 6677", "Uludağ Cd. 41, Yıldırım, Bursa"),
+
+    # ── Antalya (3) ──────────────────────────────────────────────────────────
+    ("hande_demir",     "hande.demir@gmail.com",         "Hande",     "Demir",      "+90 556 434 2233", "Konyaaltı Cd. 88, Konyaaltı, Antalya"),
+    ("mert_ozdemir",    "mert.ozdemir@ymail.com",        "Mert",      "Özdemir",    "+90 533 989 7788", "Lara Cd. 22, Muratpaşa, Antalya"),
+    ("seda_polat",      "seda.polat@gmail.com",          "Seda",      "Polat",      "+90 534 090 8899", "Yavuz Özcan Park 3, Kepez, Antalya"),
+
+    # ── Other cities (4) ─────────────────────────────────────────────────────
+    ("dilek_arslan",    "dilek.arslan@gmail.com",        "Dilek",     "Arslan",     "+90 558 656 4455", "Mevlana Cd. 67, Selçuklu, Konya"),
+    ("kemal_yilmaz",    "kemal.yilmaz@outlook.com",      "Kemal",     "Yılmaz",     "+90 559 767 5566", "İki Eylül Cd. 18, Tepebaşı, Eskişehir"),
+    ("ugur_kurt",       "ugur.kurt@hotmail.com",         "Uğur",      "Kurt",       "+90 535 101 9001", "Uzun Sk. 14, Ortahisar, Trabzon"),
+    ("derya_aksoy",     "derya.aksoy@gmail.com",         "Derya",     "Aksoy",      "+90 538 434 2334", "Gazi Bulvarı 51, Şahinbey, Gaziantep"),
 ]
 
 customer_users = {}  # username → User object
@@ -465,6 +492,64 @@ workers_data = [
         "bio": "Dedicated gardener for residential properties. Friendly, reliable and hard-working. Free first assessment.",
         "skills": "Lawn Mowing, Weeding, Planting, Patio Cleaning",
     },
+    # ── Workers in other cities (5) — so the platform isn't Istanbul-only ───
+    # Each of Ankara, Izmir, Bursa, Antalya gets a worker; a second Ankara
+    # worker covers the Plumber category outside Istanbul too.
+    {
+        "username": "ercan_ankara",
+        "email": "ercan.tas@homefix.com",
+        "first_name": "Ercan", "last_name": "Taş",
+        "phone": "+90 532 410 7788",
+        "address": "Bahçelievler, Çankaya, Ankara",
+        "category": "Electrician", "area": "Çankaya",
+        "hourly_rate": 175,
+        "bio": "Ankara-based electrician covering Çankaya and Kavaklıdere. 9 years residential and shop wiring experience.",
+        "skills": "Residential Wiring, Shop Installations, LED Retrofit",
+    },
+    {
+        "username": "okan_ankara",
+        "email": "okan.demirci@homefix.com",
+        "first_name": "Okan", "last_name": "Demirci",
+        "phone": "+90 533 521 8899",
+        "address": "Oran, Çankaya, Ankara",
+        "category": "Plumber", "area": "Çankaya",
+        "hourly_rate": 165,
+        "bio": "Plumber covering central Ankara. Specialist in apartment-block water mains and heating systems.",
+        "skills": "Water Mains, Central Heating, Boilers",
+    },
+    {
+        "username": "gokhan_izmir",
+        "email": "gokhan.aydemir@homefix.com",
+        "first_name": "Gökhan", "last_name": "Aydemir",
+        "phone": "+90 534 632 9900",
+        "address": "Alsancak, Konak, Izmir",
+        "category": "Cleaner", "area": "Alsancak",
+        "hourly_rate": 115,
+        "bio": "Izmir-based home and office cleaner. Weekly and one-off bookings. Bilingual (Turkish/English) — great for expat clients along the Kordon.",
+        "skills": "Home Cleaning, Office Cleaning, Move-out Clean",
+    },
+    {
+        "username": "burak_bursa",
+        "email": "burak.yildirim@homefix.com",
+        "first_name": "Burak", "last_name": "Yıldırım",
+        "phone": "+90 535 743 0011",
+        "address": "FSM Blv., Nilüfer, Bursa",
+        "category": "Carpenter", "area": "Nilüfer",
+        "hourly_rate": 190,
+        "bio": "Carpenter based in Bursa. Custom wardrobe builds, kitchen installs and restoration of antique furniture.",
+        "skills": "Custom Wardrobes, Antique Restoration, Kitchen Carpentry",
+    },
+    {
+        "username": "deniz_antalya",
+        "email": "deniz.yalcin@homefix.com",
+        "first_name": "Deniz", "last_name": "Yalçın",
+        "phone": "+90 536 854 1122",
+        "address": "Konyaaltı, Antalya",
+        "category": "Painter", "area": "Konyaaltı",
+        "hourly_rate": 145,
+        "bio": "Antalya-based painter. Specialist in villas and holiday rentals along the Konyaaltı and Lara coastline.",
+        "skills": "Villa Painting, Weatherproof Exterior, Holiday Let Touch-ups",
+    },
 ]
 
 created_workers = {}  # username → User object (used when building service requests)
@@ -674,13 +759,47 @@ requests_data = [
         "address": "Dudullu Cd. 44, Ümraniye, Istanbul",
         "status": "pending",
     },
+    # ── Out-of-Istanbul same-city pairs (4) ─────────────────────────────────
+    {
+        "customer": get_customer("zeynep_arslan"),
+        "worker":   get_worker("ercan_ankara"),
+        "category": categories["Electrician"],
+        "description": "Kitchen sockets keep tripping the breaker. Need urgent diagnosis.",
+        "address": "Tunalı Hilmi Cd. 92, Çankaya, Ankara",
+        "status": "completed",
+    },
+    {
+        "customer": get_customer("pinar_dogan"),
+        "worker":   get_worker("okan_ankara"),
+        "category": categories["Plumber"],
+        "description": "Central heating not warming the top-floor radiators. Pressure looks low.",
+        "address": "Kızılırmak Cd. 14, Çankaya, Ankara",
+        "status": "accepted",
+    },
+    {
+        "customer": get_customer("tarik_sahin"),
+        "worker":   get_worker("gokhan_izmir"),
+        "category": categories["Cleaner"],
+        "description": "Holiday apartment turnover clean between guest bookings. Weekly during the season.",
+        "address": "Talatpaşa Blv. 36, Alsancak, Izmir",
+        "status": "completed",
+    },
+    {
+        "customer": get_customer("hande_demir"),
+        "worker":   get_worker("deniz_antalya"),
+        "category": categories["Painter"],
+        "description": "Living room and master bedroom, satin finish. Prefer neutral beige tones.",
+        "address": "Konyaaltı Cd. 88, Konyaaltı, Antalya",
+        "status": "pending",
+    },
+
     # ── Cancelled ───────────────────────────────────────────────────────────
     {
         "customer": get_customer("kemal_yilmaz"),
         "worker":   get_worker("emrah_tesisat"),
         "category": categories["Plumber"],
         "description": "Shower head replacement needed — low pressure.",
-        "address": "Bağcılar Cd. 38, Bağcılar, Istanbul",
+        "address": "İki Eylül Cd. 18, Tepebaşı, Eskişehir",
         "status": "cancelled",
     },
 ]
@@ -822,12 +941,26 @@ print(f"  Workers      : {User.objects.filter(user_type='worker').count()}")
 print(f"  Requests     : {ServiceRequest.objects.count()}")
 print(f"  Bookings     : {Booking.objects.count()}")
 print(f"  Reviews      : {Review.objects.count()}")
+
+# City breakdown — derived from the last segment of the `address` field.
+# Rough enough for a summary line; the authoritative location data is the
+# full address string on each user.
+print()
+print("  City distribution (customers):")
+city_counts = {}
+for u in User.objects.filter(user_type="customer"):
+    city = (u.address.split(",")[-1].strip() if u.address else "Unknown")
+    city_counts[city] = city_counts.get(city, 0) + 1
+for city, count in sorted(city_counts.items(), key=lambda kv: -kv[1]):
+    print(f"    {city:<12} {count}")
+
 print()
 print("Login credentials:")
-print("  Admin:    admin@homefix.com             / Admin1234!")
-print("  Customer: ayse.kaya@gmail.com           / Customer1234!")
-print("  Customer: mehmet.celik@hotmail.com      / Customer1234!")
-print("  Worker:   kadir.ozkan@homefix.com       / Worker1234!")
-print("  Worker:   ibrahim.yilmaz@homefix.com    / Worker1234!")
-print("  Worker:   hatice.arslan@homefix.com     / Worker1234!")
+print("  Admin:    admin                          / Admin1234!")
+print("  Customer: ayse_kaya (Istanbul)           / Customer1234!")
+print("  Customer: zeynep_arslan (Ankara)         / Customer1234!")
+print("  Customer: merve_karaca (Izmir)           / Customer1234!")
+print("  Worker:   kadir_elektrik (Istanbul)      / Worker1234!")
+print("  Worker:   ercan_ankara (Ankara)          / Worker1234!")
+print("  Worker:   gokhan_izmir (Izmir)           / Worker1234!")
 print("=" * 60)

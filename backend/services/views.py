@@ -1,3 +1,25 @@
+"""
+REST API views for HomeFix.
+
+Organisation — search for the section headers (── AUTH ──, ── USERS ──, etc.)
+to jump to a group:
+
+  AUTH ............ register / login / change-password (public + JWT tokens)
+  USERS ........... /users/me/ — retrieve/update own profile
+  WORKER PROFILES . public list/detail; authenticated worker updates own
+  CATEGORIES ...... public list of service categories
+  SERVICE REQUESTS  customer creates; worker accepts/declines/completes;
+                    customer or admin cancels
+  REVIEWS ......... customer writes on a completed booking; public list
+                    per worker
+  DISPUTES ........ either party raises; admin resolves
+  NOTIFICATIONS ... in-app feed for the logged-in user
+  ADMIN ........... user list, block/unblock, pending workers,
+                    verify/approve/reject workers
+
+Every view returns JSON. Authentication is JWT (SimpleJWT) — the frontend
+sends `Authorization: Bearer <access_token>` on every protected request.
+"""
 from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView

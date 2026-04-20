@@ -40,12 +40,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-    'corsheaders',  # CORS: frontend <-> backend arası izin
-    'services',
+    'corsheaders',  # CORS support for the frontend (localhost:3000)
+    'services',     # HomeFix app (models, views, urls)
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # En üstte olmalı — tüm yanıtlara CORS header ekler
+    # MUST be first so every response gets CORS headers added to it.
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -127,13 +128,16 @@ USE_TZ = True
 STATIC_URL = 'static/'
 AUTH_USER_MODEL = 'services.User'
 
-# ─── CORS ───────────────────────────────────────────
-# Frontend (localhost:3000) ve Django admin'den gelen isteklere izin ver
+# ─── CORS ──────────────────────────────────────────────────────────────────
+# Allow the static frontend (served on :3000 by VS Code Live Server or
+# `python -m http.server 3000`) to hit the API on :8000.
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
 ]
-# Tarayıcının localStorage token'ını header ile göndermesine izin ver
+
+# Allow the Authorization header so the browser can forward the JWT access
+# token stored in localStorage on every authenticated request.
 CORS_ALLOW_HEADERS = [
     'accept',
     'authorization',
@@ -141,14 +145,21 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
 ]
 
+# ─── REST FRAMEWORK / JWT ──────────────────────────────────────────────────
+# JWT is the only authentication class — session cookies are not used.
+# The frontend sends "Authorization: Bearer <access>" on protected requests.
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+
 from datetime import timedelta
 
 SIMPLE_JWT = {
+    # Access token is short-lived and sent on every protected request.
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    # Refresh token is currently unused by the frontend but lives longer
+    # so a future refresh flow can be wired up without backend changes.
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
