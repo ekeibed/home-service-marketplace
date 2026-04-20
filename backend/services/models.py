@@ -12,11 +12,33 @@ class User(AbstractUser):
     address = models.TextField(blank=True)
 
 class WorkerProfile(models.Model):
+    # One-to-one link to the User account that owns this profile
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+    # Professional summary shown on the browse card
     bio = models.TextField(blank=True)
+
+    # Comma-separated list of specific skills, e.g. "Wiring, Panels, Outlets"
     skills = models.TextField(blank=True)
+
+    # Service category name, e.g. "Electrician" — duplicated here for fast reads
+    category_name = models.CharField(max_length=100, blank=True)
+
+    # Istanbul district / neighbourhood shown on the card
+    area = models.CharField(max_length=100, blank=True)
+
+    # Hourly rate in Turkish Lira
+    hourly_rate = models.PositiveIntegerField(default=0)
+
+    # True when the worker is accepting new requests
+    is_available = models.BooleanField(default=True)
+
+    # Set by admin after document verification
     is_verified = models.BooleanField(default=False)
+
+    # Set by admin before the profile appears in public listings
     is_approved = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
 class Category(models.Model):
