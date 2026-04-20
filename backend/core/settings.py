@@ -129,11 +129,18 @@ STATIC_URL = 'static/'
 AUTH_USER_MODEL = 'services.User'
 
 # ─── CORS ──────────────────────────────────────────────────────────────────
-# Allow the static frontend (served on :3000 by VS Code Live Server or
-# `python -m http.server 3000`) to hit the API on :8000.
+# Allow the static frontend to hit the API on :8000. Different ways of
+# serving the static files land on different ports, so we whitelist the
+# most common dev servers:
+#   - 3000: `python -m http.server 3000`, or Live Server configured to 3000
+#   - 5500: VS Code Live Server default (Ritwick Dey extension)
+#   - 5501: Live Server alt port when 5500 is in use
+#   - 8080: common fallback (`npx http-server`)
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
+    'http://localhost:3000',  'http://127.0.0.1:3000',
+    'http://localhost:5500',  'http://127.0.0.1:5500',
+    'http://localhost:5501',  'http://127.0.0.1:5501',
+    'http://localhost:8080',  'http://127.0.0.1:8080',
 ]
 
 # Allow the Authorization header so the browser can forward the JWT access
