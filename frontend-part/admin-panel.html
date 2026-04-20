@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HomeFix – Admin</title>
+    <link rel="stylesheet" href="style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@600;700&display=swap"
+        rel="stylesheet" />
+</head>
+
+<body class="hf-app page-admin">
+
+    <nav class="nav">
+        <a href="index.html" class="logo">Home<span>Fix</span></a>
+        <div class="nav-btns">
+            <button class="btn-outline" onclick="handleLogout()">Log out</button>
+        </div>
+    </nav>
+
+    <section class="dash-search-section">
+        <h1>Administration</h1>
+    </section>
+
+    <div class="admin-shell" id="adminShell">
+        <aside class="admin-sidebar" role="navigation" aria-label="Admin sections">
+            <button type="button" class="admin-nav-btn active" data-admin-section="dashboard">Dashboard</button>
+            <button type="button" class="admin-nav-btn" data-admin-section="bookings">Bookings</button>
+            <button type="button" class="admin-nav-btn" data-admin-section="users">Users</button>
+        </aside>
+
+        <main class="admin-main">
+
+            <section id="admin-section-dashboard" class="admin-section">
+                <div class="admin-stat-grid" id="adminDashboardStats"></div>
+
+                <div class="form-card" style="margin-top:8px;">
+                    <h2>Pending employee applications</h2>
+                    <p class="panel-hint">Approve or reject applicants from the same mock queue as before.</p>
+                    <div class="bookings-list" id="adminPendingList"></div>
+                    <p class="no-results" id="adminNoPending" style="display:none">No pending applications.</p>
+                </div>
+            </section>
+
+            <section id="admin-section-bookings" class="admin-section" hidden>
+                <div class="form-card">
+                    <h2>All bookings</h2>
+                    <p class="panel-hint">Same data as customer “My Account” bookings; changes stay in sync for the
+                        demo.</p>
+                    <div class="admin-toolbar">
+                        <div class="filter-group" style="margin:0;min-width:180px;">
+                            <label for="adminBookingFilter">Status</label>
+                            <select id="adminBookingFilter">
+                                <option value="all">All</option>
+                                <option value="pending">Pending / confirmed</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="search-bar admin-toolbar-search">
+                            <input type="search" id="adminBookingSearch" placeholder="Search customer, pro, service…"
+                                autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="admin-table-wrap">
+                        <table class="admin-table" id="adminBookingsTable">
+                            <thead>
+                                <tr>
+                                    <th>Service</th>
+                                    <th>Customer</th>
+                                    <th>Professional</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminBookingsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="no-results" id="adminNoBookings" style="display:none">No bookings match your filters.</p>
+                </div>
+            </section>
+
+            <section id="admin-section-users" class="admin-section" hidden>
+                <div class="form-card">
+                    <h2>Users</h2>
+                    <p class="panel-hint">Built from employees, booking customers, worker requests, applicants, and a
+                        demo admin row.</p>
+                    <div class="admin-toolbar">
+                        <div class="search-bar admin-toolbar-search" style="max-width:100%;">
+                            <input type="search" id="adminUserSearch" placeholder="Search by name or role…"
+                                autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="admin-table-wrap">
+                        <table class="admin-table" id="adminUsersTable">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminUsersTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="no-results" id="adminNoUsers" style="display:none">No users match your search.</p>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <div class="overlay" id="adminDetailOverlay" onclick="closeAdminDetailOutside(event)">
+        <div class="modal admin-detail-modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+            <button type="button" class="close-btn" onclick="closeAdminDetailModal()">✕</button>
+            <div id="adminDetailModalBody"></div>
+        </div>
+    </div>
+
+    <script src="mock-data.js"></script>
+    <script src="api.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

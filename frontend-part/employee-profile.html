@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HomeFix – Employee Profile</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@600;700&display=swap"
+    rel="stylesheet" />
+</head>
+
+<body class="hf-app page-profile">
+
+  <!-- NAVBAR -->
+  <nav class="nav">
+    <a href="index.html" class="logo">Home<span>Fix</span></a>
+    <div class="nav-btns">
+      <a href="user-dashboard.html" class="nav-link">← Back</a>
+      <a href="my-account.html" class="nav-link">My Account</a>
+      <button class="btn-outline" onclick="handleLogout()">Log out</button>
+    </div>
+  </nav>
+
+  <!-- PROFILE SECTION -->
+  <section class="profile-section">
+    <div class="profile-card">
+
+      <!-- LEFT: Info -->
+      <div class="profile-left">
+        <div class="profile-avatar" id="profileAvatar">AK</div>
+        <h1 class="profile-name" id="profileName">Ahmed Karim</h1>
+        <span class="emp-service" id="profileService">Plumbing</span>
+        <div class="profile-rating">
+          ⭐ <strong id="profileRating">4.9</strong>
+          <span id="profileReviews">· 38 reviews</span>
+        </div>
+        <div class="emp-avail available" id="profileAvail">● Available now</div>
+        <p class="profile-bio" id="profileBio">8 years experience. Leaks, pipes, full installations.</p>
+
+
+
+        <button class="btn-request" onclick="openRequestModal()">Request Service</button>
+
+
+
+
+
+      </div>
+
+      <!-- RIGHT: Reviews -->
+      <div class="profile-right">
+
+        <!-- EXISTING REVIEWS -->
+        <div class="reviews-header">
+          <h2>Reviews</h2>
+        </div>
+        <div class="reviews-list" id="reviewsList">
+          <!-- Injected by JS -->
+        </div>
+
+        <!-- LEAVE A REVIEW -->
+        <div class="review-form">
+          <h3>Leave a review</h3>
+          <div class="star-picker" id="starPicker">
+            <span onclick="selectStar(1)">★</span>
+            <span onclick="selectStar(2)">★</span>
+            <span onclick="selectStar(3)">★</span>
+            <span onclick="selectStar(4)">★</span>
+            <span onclick="selectStar(5)">★</span>
+          </div>
+          <textarea id="reviewText" placeholder="Share your experience..."></textarea>
+          <button class="btn-main" onclick="submitReview()">Submit review</button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- REQUEST MODAL -->
+  <div class="overlay" id="requestOverlay" onclick="closeRequestOutside(event)">
+    <div class="modal" id="requestModal">
+      <button class="close-btn" onclick="closeRequestModal()">✕</button>
+      <h2>Request Service</h2>
+      <p class="modal-sub" id="requestEmpName">Ahmed Karim</p>
+      <div class="form-group">
+        <label>Your phone number</label>
+        <input type="tel" id="reqPhone" placeholder="+90 555 000 0000" />
+      </div>
+      <div class="form-group">
+        <label>Address</label>
+        <input type="text" id="reqAddress" placeholder="Street, district, city" />
+      </div>
+      <div class="form-group">
+        <label>Preferred date & time</label>
+        <input type="datetime-local" id="reqDateTime" />
+      </div>
+      <div class="form-group">
+        <label>Problem description</label>
+        <textarea id="reqProblem" placeholder="Describe the problem or service you need..."
+          style="width:100%;padding:11px 14px;border:1.5px solid var(--blue-pale);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font-body);outline:none;resize:vertical;min-height:90px;background:#f8fbff;color:var(--text-primary);margin-bottom:14px;"></textarea>
+      </div>
+      <button class="btn-main" onclick="submitRequest()">Send Request</button>
+    </div>
+  </div>
+
+
+
+  <script src="mock-data.js"></script>
+    <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
