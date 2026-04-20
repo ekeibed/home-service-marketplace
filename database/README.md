@@ -1,109 +1,116 @@
 # Database — Home Service Marketplace
 
-Local PostgreSQL database running in Docker for the Home Service Marketplace project.
+Local PostgreSQL 16 running in Docker. Schema is owned by **Django
+migrations** (not raw SQL) — the first `python manage.py migrate` run against
+an empty container creates every table.
 
 ## Prerequisites
 
 - Docker Desktop installed and running
-- Port 5432 available on your local machine
+- Port 5432 available on the host
 
 ## Setup
 
-1. Copy the example environment file and fill in your own values:
+1. Copy the env template (only once):
 
-```powershell
-   Copy-Item .env.example .env
+```bash
+cp .env.example .env     # macOS/Linux
+copy .env.example .env   # Windows cmd
 ```
 
 2. Start the database:
 
-```powershell
-   docker compose up -d
+```bash
+docker compose up -d
+docker ps                # hsm_postgres should be "Up (healthy)"
 ```
 
-3. Verify it's running:
+3. Let Django create the schema (from repo root):
 
-```powershell
-   docker ps
+```bash
+cd ../backend
+python manage.py migrate
 ```
 
-The container `hsm_postgres` should show `Up (healthy)`.
+4. Load realistic demo data:
+
+```bash
+# Windows — UTF-8 required for Turkish characters
+set PYTHONUTF8=1
+venv\Scripts\python.exe -c "import django, os; os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings'); django.setup(); exec(open('../database/seed_django.py', encoding='utf-8').read())"
+```
+
+On Linux/macOS, drop `set PYTHONUTF8=1` and use `venv/bin/python` — the
+default UTF-8 locale on those systems is enough.
 
 ## Connection Details
 
-| Setting  | Value            |
-| -------- | ---------------- |
-| Host     | `localhost`    |
-| Port     | `5432`         |
-| Database | `hsm_db`       |
-| User     | `hsm_user`     |
-| Password | `hsm_password` |
+Values come from [`.env`](./.env) (git-ignored). The defaults shipped in
+`.env.example` target demo/dev use and pair with the
+`POSTGRES_HOST_AUTH_METHOD=trust` setting in `docker-compose.yml`:
 
-> Note: These are demo credentials. Override them in your own `.env` file for security.
+| Setting  | Env var             | Default (dev)       |
+| -------- | ------------------- | ------------------- |
+| Host     | —                   | `localhost`         |
+| Port     | `POSTGRES_PORT`     | `5432`              |
+| Database | `POSTGRES_DB`       | `home_service_db`   |
+| User     | `POSTGRES_USER`     | `imaneelmorabet`    |
+| Password | `POSTGRES_PASSWORD` | `postgres` (unused) |
+
+Change any of these in your local `.env`; keep them in sync with
+`backend/core/settings.py` `DATABASES` or set the matching env vars there
+too.
 
 ## Files
 
-| File                   | Purpose                                           |
-| ---------------------- | ------------------------------------------------- |
-| `docker-compose.yml` | Docker service definition for PostgreSQL          |
-| `schema.sql`         | Table definitions (runs on first container start) |
-| `seed.sql`           | Demo data (runs after schema)                     |
-| `.env.example`       | Template for your local `.env`                  |
-| `.env`               | Your actual credentials (git-ignored)             |
+| File                | Purpose                                              |
+| ------------------- | ---------------------------------------------------- |
+| `docker-compose.yml`| PostgreSQL 16 service definition                     |
+| `.env.example`      | Template for local `.env`                            |
+| `seed_django.py`    | Demo data via Django ORM (32 customers, 30 workers)  |
 
 ## Common Commands
 
-**Start database:**
-
-```powershell
+```bash
+# Start / stop
 docker compose up -d
-```
+docker compose stop                # keep data
+docker compose down                # remove container, keep volume
+docker compose down -v             # nuke everything including data
 
-**Stop database (keeps data):**
-
-```powershell
-docker compose stop
-```
-
-**Stop and remove container (keeps data in volume):**
-
-```powershell
-docker compose down
-```
-
-**Stop and delete everything including data:**
-
-```powershell
-docker compose down -v
-```
-
-**View logs:**
-
-```powershell
+# Logs
 docker logs hsm_postgres
-docker logs -f hsm_postgres   # live follow
-```
+docker logs -f hsm_postgres        # live
 
-**Connect via psql (PostgreSQL CLI inside container):**
-
-```powershell
-docker exec -it hsm_postgres psql -U hsm_user -d hsm_db
+# Shell into Postgres
+docker exec -it hsm_postgres psql -U imaneelmorabet -d home_service_db
 ```
 
 ## Resetting the Database
 
-Schema changes only apply on first startup. To re-run `schema.sql` and `seed.sql` with new changes:
+The Docker volume persists data across container restarts. To start fresh:
 
-```powershell
-docker compose down -v      # -v removes the volume (deletes all data)
-docker compose up -d        # recreates container, re-runs schema + seed
+```bash
+docker compose down -v             # drops the volume
+docker compose up -d               # fresh empty container
+cd ../backend
+python manage.py migrate           # rebuild schema
+# then re-run the seed command from the "Setup" section
 ```
 
 ## Schema Overview
 
-- `users` — All system users (customers, workers, admin)
-- `service_categories` — Lookup table for service types
-- `worker_profiles` — Extended profile for users with role='worker'
-- `bookings` — Service bookings between customers and workers
+Every table name is prefixed with `services_` (the Django app label):
 
-See `schema.sql` for full table definitions and `../ARCHITECTURE.md` for the ER diagram.
+- `services_user` — customers, workers, admins (extends `AbstractUser`)
+- `services_workerprofile` — 1:1 extension of `User` for workers only
+- `services_category` — service categories (Electrician, Plumber, …)
+- `services_servicerequest` — customer → worker job requests
+- `services_booking` — confirmed booking per accepted request
+- `services_review` — customer review on a completed booking
+- `services_dispute` — dispute raised against a booking
+- `services_notification` — in-app notifications
+
+See [`backend/services/models.py`](../backend/services/models.py) for the
+authoritative definitions and
+[`../ARCHITECTURE.md`](../ARCHITECTURE.md) for the ER diagram.

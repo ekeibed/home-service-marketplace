@@ -61,38 +61,48 @@ database/             Docker Postgres + seed scripts
 
 ## Quick Start
 
-### 1. Start the database
+### First-time setup (5 minutes)
 
 ```bash
-cd database
-docker compose up -d
-docker ps              # confirm hsm_postgres is "Up (healthy)"
-```
-
-### 2. Start the backend
-
-```bash
+# Clone and enter the repo, then:
 cd backend
 python -m venv venv
-venv/Scripts/activate           # Windows
-# source venv/bin/activate      # Linux/macOS
+venv\Scripts\activate            # Windows
+# source venv/bin/activate       # Linux/macOS
 pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver 8000
+
+cd ../database
+copy .env.example .env            # Windows
+# cp .env.example .env            # Linux/macOS
 ```
 
-### 3. Seed realistic data (one-time)
+### Run it
 
-In a **second terminal**, with the backend venv active:
+From the repo root:
 
 ```bash
-cd backend
-# Windows — PYTHONUTF8=1 is REQUIRED for Turkish characters to land intact
-set PYTHONUTF8=1
-venv\Scripts\python.exe -c "import django, os; os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings'); django.setup(); exec(open('../database/seed_django.py', encoding='utf-8').read())"
+# Windows
+start.bat       # starts Postgres + backend on :8000
+seed.bat        # (first time only) loads 32 customers + 30 workers
+
+# Linux/macOS
+./start.sh
+./seed.sh
 ```
 
-After seeding:
+`start.bat` / `start.sh` will:
+1. Start the Postgres container
+2. Wait for it to become healthy
+3. Apply Django migrations
+4. Launch `runserver` on <http://localhost:8000>
+
+Then open `frontend-part/index.html` in a browser, or (recommended) serve it
+with VS Code **Live Server** on <http://localhost:3000> so CORS matches the
+backend settings.
+
+### Seed contents
+
+After running `seed.bat` / `seed.sh`:
 
 - 7 service categories
 - 1 admin account
@@ -101,12 +111,6 @@ After seeding:
 - ~20 service requests spanning all statuses
 - Bookings for accepted/completed requests
 - Reviews on completed bookings
-
-### 4. Open the frontend
-
-Open `frontend-part/index.html` directly in a browser, or (recommended) serve
-it with VS Code **Live Server** on <http://localhost:3000> so CORS matches the
-backend settings.
 
 ---
 
