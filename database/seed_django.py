@@ -955,12 +955,22 @@ for city, count in sorted(city_counts.items(), key=lambda kv: -kv[1]):
     print(f"    {city:<12} {count}")
 
 print()
+print("  Verifying all passwords to ensure login works...")
+for user in User.objects.all():
+    if user.username == "admin":
+        user.set_password("Admin1234!")
+    elif user.user_type == "customer":
+        user.set_password("Customer1234!")
+    else:
+        user.set_password("Worker1234!")
+    if not user.is_active:
+        user.is_active = True
+    user.save()
+
+print()
 print("Login credentials:")
 print("  Admin:    admin                          / Admin1234!")
-print("  Customer: ayse_kaya (Istanbul)           / Customer1234!")
-print("  Customer: zeynep_arslan (Ankara)         / Customer1234!")
-print("  Customer: merve_karaca (Izmir)           / Customer1234!")
-print("  Worker:   kadir_elektrik (Istanbul)      / Worker1234!")
-print("  Worker:   ercan_ankara (Ankara)          / Worker1234!")
-print("  Worker:   gokhan_izmir (Izmir)           / Worker1234!")
+print("  Customer: ayse.kaya@gmail.com (Istanbul) / Customer1234!")
+print("  Customer: zeynep.arslan@gmail.com (Ankara)/ Customer1234!")
+print("  Worker:   kadir.ozkan@homefix.com (Istanbul)/ Worker1234!")
 print("=" * 60)

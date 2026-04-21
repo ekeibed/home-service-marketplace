@@ -80,11 +80,12 @@ machines): [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ```
 home-service-marketplace/
-├── start.bat / start.sh        One-command launcher (Postgres + Django + auto-seed)
+├── start.bat                    One-click launcher (Docker, DB Seed, Django Backend + Frontend Server & Auto Open Browser)
+├── start.sh                     macOS/Linux launcher
 ├── README.md                    You are here
 ├── ARCHITECTURE.md              UML diagrams + design decisions
 │
-├── frontend-part/               Static frontend — open directly in a browser
+├── frontend-part/               Static frontend — hosted locally by start.bat
 │   ├── index.html                 Landing page + browse workers + request form
 │   ├── user-dashboard.html        Customer dashboard (bookings, requests)
 │   ├── employee-dashboard.html    Worker dashboard (incoming requests)
@@ -163,34 +164,40 @@ chmod +x start.sh && ./start.sh
 
 `start.bat` / `start.sh` performs these steps in order:
 
+**On Windows (`start.bat`):**
 1. **Starts the PostgreSQL container** (`docker compose up -d` in `database/`)
 2. **Waits** until Postgres answers `pg_isready` (up to 20 s)
 3. **Applies Django migrations** (idempotent — safe to run repeatedly)
-4. **Seeds the database** if the user table is empty (first run only)
-5. **Launches `runserver`** on <http://localhost:8000>
+4. **Seeds the database** if the user table is empty (first run only). (This guarantees test users have correct hashed passwords).
+5. **Starts the frontend server** on `http://localhost:3000` via Python `http.server` in the background
+6. **Automatically opens** the frontend in your default browser
+7. **Launches the Django backend** on `http://localhost:8000`
+*(When you press `Ctrl+C`, it cleanly shuts down both the backend and frontend).*
 
-Expected console output (first run):
+**On Linux/macOS (`start.sh`):**
+It performs steps 1-4 and launches the backend. You'll need to manually open standard Live Server on port 3000 for the frontend.
+
+Expected console output (first run on Windows):
 
 ```
-[1/4] Starting PostgreSQL container...
-[2/4] Waiting for database to become healthy...
+[1/5] Starting PostgreSQL container...
+[2/5] Waiting for database to become healthy...
 Database is ready.
-[3/4] Applying Django migrations...
-Database is empty — loading seed data (32 customers, 30+ workers, ...)
-  Category: Electrician — created
-  Customer: Ayşe Kaya — created
-  ...
+[3/5] Applying Django migrations...
+Database is empty - loading seed data...
+[4/5] Starting frontend server on http://localhost:3000 ...
+[5/5] Opening browser and starting backend...
 ===========================================================================
-  Backend running on http://localhost:8000
+  HomeFix is running!
+  Frontend : http://localhost:3000   (opened in browser)
+  Backend  : http://localhost:8000
 ===========================================================================
 ```
 
 ### 4. Open the frontend
 
-Open `frontend-part/index.html` directly in a browser, **or** right-click it in
-VS Code → **Open with Live Server**. Live Server serves the page on
-<http://localhost:3000>, which matches the CORS whitelist in
-`backend/core/settings.py` — recommended for the full experience.
+**On Windows:** This is done **automatically** by `start.bat`. Your browser will magically pop open at `http://localhost:3000`. 
+**On macOS/Linux:** Open `frontend-part/index.html` directly in a browser, **or** right-click it in VS Code → **Open with Live Server**. Live Server serves the page on `http://localhost:3000`, which matches the CORS whitelist in `backend/core/settings.py`.
 
 ---
 
@@ -205,10 +212,12 @@ start.bat        # or ./start.sh
 - Postgres container already exists → reused instantly
 - Migrations already applied → no-op
 - DB already seeded → skipped
+- Frontend starts on :3000 (Windows)
 - Backend starts on :8000
-- Ctrl+C stops the server; `docker compose stop` (in `database/`) stops Postgres
+- Browser automatically opens to localhost:3000 (Windows)
+- Ctrl+C stops the server and frontend processes; `docker compose down` (in `database/`) stops Postgres
 
-That's it.
+That's it. (We've also cleaned up manual and temporary files such as `fix_passwords.py`, `debug-login.bat`, `schema.sql` to keep the repo absolutely spotless.)
 
 ---
 

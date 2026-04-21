@@ -1,7 +1,6 @@
 # Docker Compose file for Home Service Marketplace database
 # Reads credentials from .env file in the same directory
 
-version: "3.9"
 
 services:
   db:
