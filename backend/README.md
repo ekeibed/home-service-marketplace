@@ -1,3 +1,4 @@
+
 # 🏠 Home Service Marketplace — Backend
 
 > A RESTful API backend for a platform that connects customers who need home services with verified workers who provide them.
@@ -12,9 +13,21 @@
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
 - [Database Setup](#database-setup)
-- [API Endpoints](#api-endpoints)
 - [Authentication](#authentication)
 - [User Roles](#user-roles)
+- [API Endpoints](#api-endpoints)
+  - [Authentication Endpoints](#-authentication-endpoints)
+  - [Users & Profiles](#-users--profiles)
+  - [Workers](#-workers)
+  - [Service Categories](#️-service-categories)
+  - [Service Requests](#-service-requests)
+  - [Reviews](#-reviews)
+  - [Disputes](#️-disputes)
+  - [Notifications](#-notifications)
+  - [Admin Endpoints](#️-admin-endpoints)
+- [Service Request Flow](#service-request-flow)
+- [Status Reference](#status-reference)
+- [Error Responses](#error-responses)
 - [Team](#team)
 
 ---
@@ -58,8 +71,8 @@ backend/
 │
 ├── services/                  # Main application
 │   ├── migrations/            # Database migration history
-│   ├── models.py              # Database models (User, ServiceRequest, etc.)
-│   ├── serializers.py         # JSON serializers for all models
+│   ├── models.py              # Database models
+│   ├── serializers.py         # JSON serializers
 │   ├── views.py               # API views and business logic
 │   ├── urls.py                # App-level URL routing
 │   └── admin.py               # Admin panel configuration
@@ -74,8 +87,6 @@ backend/
 ## Getting Started
 
 ### Prerequisites
-
-Make sure you have the following installed:
 
 - Python 3.10+
 - PostgreSQL 14+
@@ -136,7 +147,7 @@ The API will be available at: `http://127.0.0.1:8000/`
 
 ## Environment Variables
 
-Create a `.env` file in the `backend/` folder with the following:
+Create a `.env` file in the `backend/` folder:
 
 ```env
 SECRET_KEY=your-django-secret-key
@@ -148,13 +159,11 @@ DB_HOST=localhost
 DB_PORT=5432
 ```
 
-> **Never commit `.env` to GitHub.** It is already listed in `.gitignore`.
+>  **Never commit `.env` to GitHub.** It is already listed in `.gitignore`.
 
 ---
 
 ## Database Setup
-
-This project uses **PostgreSQL**. To set up the database locally:
 
 **1. Open PostgreSQL terminal**
 
@@ -180,89 +189,14 @@ python3 manage.py migrate
 
 | Model | Description |
 |---|---|
-| `User` | Custom user model with `user_type` (customer/worker/admin) |
-| `WorkerProfile` | Extended profile for workers (bio, skills, verification status) |
+| `User` | Custom user with `user_type` (customer / worker / admin) |
+| `WorkerProfile` | Extended profile for workers (bio, skills, verification) |
 | `Category` | Service categories (plumbing, cleaning, electrical, etc.) |
 | `ServiceRequest` | Requests submitted by customers |
-| `Booking` | Created automatically when a worker accepts a request |
+| `Booking` | Created automatically when worker accepts a request |
 | `Dispute` | Raised by users, resolved by admin |
 | `Review` | Customer reviews for workers after job completion |
 | `Notification` | In-app notifications for all users |
-
----
-
-## API Endpoints
-
-Base URL: `http://127.0.0.1:8000/api/`
-
-###  Authentication
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `POST` | `/auth/register/` | Public | Register a new user |
-| `POST` | `/auth/login/` | Public | Login and receive JWT tokens |
-
-###  Users
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/users/me/` | Authenticated | Get my profile |
-| `PUT` | `/users/me/` | Authenticated | Update my profile |
-
-###  Workers
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/workers/` | Authenticated | List all approved workers |
-| `GET` | `/workers/{id}/` | Authenticated | Get worker profile |
-| `PUT` | `/workers/profile/` | Worker | Update own profile |
-| `GET` | `/workers/{id}/reviews/` | Authenticated | Get worker reviews |
-| `POST` | `/workers/{id}/verify/` | Admin | Verify worker identity |
-| `POST` | `/workers/{id}/approve/` | Admin | Approve worker account |
-
-###  Categories
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/services/categories/` | Authenticated | List all service categories |
-
-###  Service Requests
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/requests/` | Authenticated | List requests (filtered by role) |
-| `POST` | `/requests/` | Customer | Submit a new service request |
-| `GET` | `/requests/{id}/` | Authenticated | Get request details |
-| `POST` | `/requests/{id}/cancel/` | Customer | Cancel a request |
-| `POST` | `/requests/{id}/accept/` | Worker | Accept a request |
-| `POST` | `/requests/{id}/decline/` | Worker | Decline a request |
-| `POST` | `/requests/{id}/complete/` | Worker | Mark job as complete |
-
-###  Reviews
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `POST` | `/reviews/` | Customer | Leave a review for a worker |
-
-###  Disputes
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `POST` | `/disputes/` | Authenticated | Raise a dispute |
-| `GET` | `/disputes/all/` | Admin | List all disputes |
-| `POST` | `/disputes/{id}/resolve/` | Admin | Resolve a dispute |
-
-###  Notifications
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/notifications/` | Authenticated | Get my notifications |
-
-###  Admin
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/admin/users/` | Admin | List all users |
 
 ---
 
@@ -270,11 +204,11 @@ Base URL: `http://127.0.0.1:8000/api/`
 
 This API uses **JWT (JSON Web Token)** authentication.
 
-### How to authenticate
+### How to use
 
-**1. Register or login to get tokens:**
+**Step 1 — Login to get tokens:**
 
-```bash
+```http
 POST /api/auth/login/
 Content-Type: application/json
 
@@ -284,19 +218,23 @@ Content-Type: application/json
 }
 ```
 
-**2. Response contains your tokens:**
+**Step 2 — You receive:**
 
 ```json
 {
-    "user": { "id": 1, "username": "john", "user_type": "customer" },
+    "user": {
+        "id": 1,
+        "username": "john_doe",
+        "user_type": "customer"
+    },
     "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
-**3. Include the access token in every request:**
+**Step 3 — Include the access token in every request:**
 
-```
+```http
 Authorization: Bearer <your_access_token>
 ```
 
@@ -304,14 +242,14 @@ Authorization: Bearer <your_access_token>
 
 | Token | Lifetime | Purpose |
 |---|---|---|
-| `access` | 1 day | Used in every API request |
-| `refresh` | 7 days | Used to get a new access token |
+| `access` | 1 day | Sent in every API request header |
+| `refresh` | 7 days | Used to get a new access token when expired |
 
 ---
 
 ## User Roles
 
-| Role | Permissions |
+| Role | What they can do |
 |---|---|
 | **Customer** | Register, browse categories, submit requests, view workers, cancel requests, leave reviews |
 | **Worker** | Register, manage profile, receive notifications, accept/decline requests, mark jobs complete |
@@ -319,16 +257,626 @@ Authorization: Bearer <your_access_token>
 
 ---
 
+## API Endpoints
+
+**Base URL:** `http://127.0.0.1:8000/api/`
+
+>  **Auth Required** = send `Authorization: Bearer <token>` in request header
+>
+>  **Public** = no token needed
+
+---
+
+###  Authentication Endpoints
+
+#### Register a new user
+
+```http
+POST /api/auth/register/
+```
+
+ Public
+
+**Request body:**
+
+```json
+{
+    "username": "john_doe",
+    "email": "john@example.com",
+    "password": "SecurePass123!",
+    "user_type": "customer",
+    "phone": "0501234567",
+    "address": "Istanbul, Turkey"
+}
+```
+
+> `user_type` must be `"customer"` or `"worker"`
+
+**Response — 201 Created:**
+
+```json
+{
+    "user": {
+        "id": 1,
+        "username": "john_doe",
+        "email": "john@example.com",
+        "user_type": "customer",
+        "phone": "0501234567",
+        "address": "Istanbul, Turkey"
+    },
+    "access": "eyJhbGci...",
+    "refresh": "eyJhbGci..."
+}
+```
+
+---
+
+#### Login
+
+```http
+POST /api/auth/login/
+```
+
+ Public
+
+**Request body:**
+
+```json
+{
+    "username": "john_doe",
+    "password": "SecurePass123!"
+}
+```
+
+**Response — 200 OK:**
+
+```json
+{
+    "user": {
+        "id": 1,
+        "username": "john_doe",
+        "email": "john@example.com",
+        "user_type": "customer",
+        "phone": "0501234567",
+        "address": "Istanbul, Turkey"
+    },
+    "access": "eyJhbGci...",
+    "refresh": "eyJhbGci..."
+}
+```
+
+---
+
+###  Users & Profiles
+
+#### Get my profile
+
+```http
+GET /api/users/me/
+```
+
+ Auth Required
+
+**Response — 200 OK:**
+
+```json
+{
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "user_type": "customer",
+    "phone": "0501234567",
+    "address": "Istanbul, Turkey"
+}
+```
+
+---
+
+#### Update my profile
+
+```http
+PUT /api/users/me/
+```
+
+ Auth Required
+
+**Request body:**
+
+```json
+{
+    "phone": "0509999999",
+    "address": "Ankara, Turkey"
+}
+```
+
+---
+
+###  Workers
+
+#### List all approved workers
+
+```http
+GET /api/workers/
+```
+
+ Auth Required
+
+**Response — 200 OK:**
+
+```json
+[
+    {
+        "id": 1,
+        "user": {
+            "id": 2,
+            "username": "worker1",
+            "email": "worker@example.com",
+            "user_type": "worker"
+        },
+        "bio": "Professional plumber with 5 years experience",
+        "skills": "Plumbing, pipe repair, installation",
+        "is_verified": true,
+        "is_approved": true
+    }
+]
+```
+
+---
+
+#### Get worker by ID
+
+```http
+GET /api/workers/{id}/
+```
+
+ Auth Required
+
+---
+
+#### Get worker reviews
+
+```http
+GET /api/workers/{id}/reviews/
+```
+
+🔒 Auth Required
+
+**Response — 200 OK:**
+
+```json
+[
+    {
+        "id": 1,
+        "booking": 1,
+        "customer": 1,
+        "worker": 2,
+        "rating": 5,
+        "comment": "Excellent work, very professional!",
+        "created_at": "2026-04-19T10:00:00Z"
+    }
+]
+```
+
+---
+
+#### Update worker profile *(worker only)*
+
+```http
+PUT /api/workers/profile/
+```
+
+ Auth Required — Worker only
+
+**Request body:**
+
+```json
+{
+    "bio": "10 years experience in electrical work",
+    "skills": "Electrical, wiring, installation, repairs"
+}
+```
+
+---
+
+#### Verify worker *(admin only)*
+
+```http
+POST /api/workers/{id}/verify/
+```
+
+ Auth Required — Admin only
+
+**Response — 200 OK:**
+
+```json
+{
+    "message": "Worker verified"
+}
+```
+
+---
+
+#### Approve worker *(admin only)*
+
+```http
+POST /api/workers/{id}/approve/
+```
+
+ Auth Required — Admin only
+
+**Response — 200 OK:**
+
+```json
+{
+    "message": "Worker approved"
+}
+```
+
+---
+
+###  Service Categories
+
+#### List all categories
+
+```http
+GET /api/services/categories/
+```
+
+ Auth Required
+
+**Response — 200 OK:**
+
+```json
+[
+    {
+        "id": 1,
+        "name": "Plumbing",
+        "description": "Pipe repair and installation"
+    },
+    {
+        "id": 2,
+        "name": "Cleaning",
+        "description": "Home cleaning services"
+    },
+    {
+        "id": 3,
+        "name": "Electrical",
+        "description": "Electrical repairs and installation"
+    }
+]
+```
+
+---
+
+###  Service Requests
+
+> **Note:** The same `GET /api/requests/` endpoint returns different data depending on who calls it:
+> - **Customer** → sees only their own requests
+> - **Worker** → sees only their assigned jobs
+> - **Admin** → sees all requests
+
+#### List requests
+
+```http
+GET /api/requests/
+```
+
+ Auth Required
+
+---
+
+#### Submit a new request *(customer only)*
+
+```http
+POST /api/requests/
+```
+
+ Auth Required — Customer only
+
+**Request body:**
+
+```json
+{
+    "category": 1,
+    "description": "My kitchen sink is leaking badly",
+    "address": "Kadikoy, Istanbul"
+}
+```
+
+**Response — 201 Created:**
+
+```json
+{
+    "id": 1,
+    "customer": 1,
+    "worker": null,
+    "category": 1,
+    "description": "My kitchen sink is leaking badly",
+    "address": "Kadikoy, Istanbul",
+    "status": "pending",
+    "created_at": "2026-04-19T10:00:00Z"
+}
+```
+
+---
+
+#### Get request details
+
+```http
+GET /api/requests/{id}/
+```
+
+ Auth Required
+
+---
+
+#### Cancel a request *(customer only)*
+
+```http
+POST /api/requests/{id}/cancel/
+```
+
+ Auth Required — Customer only
+
+> Can only cancel requests with status `pending` or `accepted`
+
+**Response — 200 OK:**
+
+```json
+{
+    "message": "Request cancelled"
+}
+```
+
+---
+
+#### Accept a request *(worker only)*
+
+```http
+POST /api/requests/{id}/accept/
+```
+
+ Auth Required — Worker only
+
+> Automatically creates a **Booking** and sends a **Notification** to the customer
+
+**Response — 200 OK:**
+
+```json
+{
+    "message": "Request accepted and booking created"
+}
+```
+
+---
+
+#### Decline a request *(worker only)*
+
+```http
+POST /api/requests/{id}/decline/
+```
+
+ Auth Required — Worker only
+
+**Response — 200 OK:**
+
+```json
+{
+    "message": "Request declined"
+}
+```
+
+---
+
+#### Mark job as complete *(worker only)*
+
+```http
+POST /api/requests/{id}/complete/
+```
+
+ Auth Required — Worker only
+
+> Automatically sends a **Notification** to the customer
+
+**Response — 200 OK:**
+
+```json
+{
+    "message": "Job marked as complete"
+}
+```
+
+---
+
+### ⭐ Reviews
+
+#### Leave a review *(customer only)*
+
+```http
+POST /api/reviews/
+```
+
+Auth Required — Customer only
+
+> Can only review after the job is marked as `completed`
+
+**Request body:**
+
+```json
+{
+    "booking": 1,
+    "rating": 5,
+    "comment": "Excellent work, very professional and on time!"
+}
+```
+
+> `rating` must be between `1` and `5`
+
+**Response — 201 Created:**
+
+```json
+{
+    "id": 1,
+    "booking": 1,
+    "customer": 1,
+    "worker": 2,
+    "rating": 5,
+    "comment": "Excellent work, very professional and on time!",
+    "created_at": "2026-04-19T12:00:00Z"
+}
+```
+
+---
+
+###  Disputes
+
+#### Raise a dispute
+
+```http
+POST /api/disputes/
+```
+
+ Auth Required
+
+**Request body:**
+
+```json
+{
+    "service_request": 1,
+    "description": "Worker did not complete the job properly"
+}
+```
+
+---
+
+#### List all disputes *(admin only)*
+
+```http
+GET /api/disputes/all/
+```
+
+ Auth Required — Admin only
+
+---
+
+#### Resolve a dispute *(admin only)*
+
+```http
+POST /api/disputes/{id}/resolve/
+```
+
+ Auth Required — Admin only
+
+**Response — 200 OK:**
+
+```json
+{
+    "message": "Dispute resolved"
+}
+```
+
+---
+
+### 🔔 Notifications
+
+#### Get my notifications
+
+```http
+GET /api/notifications/
+```
+
+ Auth Required
+
+**Response — 200 OK:**
+
+```json
+[
+    {
+        "id": 1,
+        "message": "Your request has been accepted by worker1",
+        "is_read": false,
+        "created_at": "2026-04-19T10:30:00Z"
+    },
+    {
+        "id": 2,
+        "message": "Your job has been completed by worker1",
+        "is_read": false,
+        "created_at": "2026-04-19T14:00:00Z"
+    }
+]
+```
+
+---
+
+###  Admin Endpoints
+
+#### List all users *(admin only)*
+
+```http
+GET /api/admin/users/
+```
+
+ Auth Required — Admin only
+
+---
+
 ## Service Request Flow
 
 ```
-Customer submits request  →  status: pending
+Customer submits request
         ↓
-Worker accepts request    →  status: accepted  +  Booking created  +  Notification sent
+    status: pending
         ↓
-Worker marks complete     →  status: completed  +  Notification sent
+Worker accepts request  ──►  Booking created automatically
+        ↓                    Notification sent to customer
+    status: accepted
         ↓
-Customer leaves review    →  Review saved for worker
+Worker marks complete   ──►  Notification sent to customer
+        ↓
+    status: completed
+        ↓
+Customer leaves review  ──►  Review saved for worker
+```
+
+---
+
+## Status Reference
+
+| Status | Meaning | Who sets it |
+|---|---|---|
+| `pending` | Request submitted, waiting for worker | Set automatically on creation |
+| `accepted` | Worker accepted the job | Worker via `/accept/` |
+| `declined` | Worker declined the job | Worker via `/decline/` |
+| `completed` | Job finished by worker | Worker via `/complete/` |
+| `cancelled` | Cancelled by customer | Customer via `/cancel/` |
+
+---
+
+## Error Responses
+
+| HTTP Code | Meaning | Common cause |
+|---|---|---|
+| `400 Bad Request` | Invalid or missing data | Missing required field |
+| `401 Unauthorized` | Not authenticated | Missing or expired JWT token |
+| `403 Forbidden` | Not authorized | Wrong user role for this action |
+| `404 Not Found` | Resource does not exist | Wrong ID in URL |
+| `500 Server Error` | Backend error | Bug in the code |
+
+**Example error response:**
+
+```json
+{
+    "error": "Request is not pending"
+}
+```
+
+**Example validation error:**
+
+```json
+{
+    "username": ["A user with that username already exists."],
+    "password": ["This password is too common."]
+}
 ```
 
 ---
