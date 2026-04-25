@@ -9,7 +9,7 @@ Original author: Hafsa El-Morabet
     - Booking, Review, Dispute, Notification views
     - Admin user list and worker verify / approve endpoints
 
-Security hardening: Iman Elmourabite (April 2026)
+Security hardening: Iman El-Morabet (April 2026)
     - MyProfileView: whitelist editable fields to block user_type escalation
       via PATCH /api/users/me/
     - ServiceRequestDetailView: scope queryset by customer/worker so non-owners
