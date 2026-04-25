@@ -1,3 +1,11 @@
+"""
+backend/services/urls.py — REST API URL routing for the HomeFix marketplace.
+
+Original author: Hafsa El-Morabet
+    - Auth, profile, worker, category, request, review, dispute,
+      notification, and admin endpoints under /api/.
+"""
+
 from django.urls import path
 from . import views
 

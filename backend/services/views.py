@@ -1,3 +1,24 @@
+"""
+backend/services/views.py — DRF API views for the HomeFix marketplace.
+
+Original author: Hafsa El-Morabet
+    - Auth views (Register, Login)
+    - Worker profile list / detail / update views
+    - Category list view
+    - Service request CRUD, accept / decline / cancel / complete flows
+    - Booking, Review, Dispute, Notification views
+    - Admin user list and worker verify / approve endpoints
+
+Security hardening: Iman Elmourabite (April 2026)
+    - MyProfileView: whitelist editable fields to block user_type escalation
+      via PATCH /api/users/me/
+    - ServiceRequestDetailView: scope queryset by customer/worker so non-owners
+      get 404 instead of leaking request details
+    - AcceptRequestView / DeclineRequestView: enforce worker-only access and
+      block hijack of requests targeted at a different worker
+    - DisputeListView / ResolveDisputeView: tightened to IsAdminUser
+"""
+
 from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView

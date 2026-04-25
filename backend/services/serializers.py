@@ -1,3 +1,16 @@
+"""
+backend/services/serializers.py — DRF serializers for the HomeFix marketplace.
+
+Original author: Hafsa El-Morabet
+    - RegisterSerializer (with password validation and worker profile auto-creation)
+    - UserSerializer
+    - WorkerProfileSerializer with computed review_count and average_rating
+    - CategorySerializer
+    - ServiceRequestSerializer with denormalized customer / worker / category names,
+      booking_id and has_review fields
+    - BookingSerializer, DisputeSerializer, ReviewSerializer, NotificationSerializer
+"""
+
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.db.models import Avg
