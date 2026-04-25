@@ -1,0 +1,77 @@
+# ─── Python / Django ────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+parts/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Virtual envs
+venv/
+.venv/
+env/
+.env.local
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+media/
+local_settings.py
+
+# Migrations are checked in, but local-only overrides are not
+backend/services/migrations/local_*.py
+
+# ─── Environment / secrets ──────────────────────────────────────
+.env
+*.env
+!.env.example
+backend/.env
+database/.env
+frontend/.env
+
+# ─── Node / frontend tooling (if anyone adds it later) ──────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.parcel-cache/
+
+# ─── IDE / editor ───────────────────────────────────────────────
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ─── OS ─────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ─── Docker ─────────────────────────────────────────────────────
+hsm_postgres_data/
+postgres_data/
+*.pid
+
+# ─── Logs ───────────────────────────────────────────────────────
+*.log
+logs/
+
+# ─── Local handoff folder (zip files for teammates, not committed) ──
+_team-handoff/
+*.zip
