@@ -147,19 +147,35 @@ The API will be available at: `http://127.0.0.1:8000/`
 
 ## Environment Variables
 
-Create a `.env` file in the `backend/` folder:
+Copy the starter template and fill in real values:
 
-```env
-SECRET_KEY=your-django-secret-key
-DEBUG=True
-DB_NAME=home_service_db
-DB_USER=your_postgres_username
-DB_PASSWORD=your_postgres_password
-DB_HOST=localhost
-DB_PORT=5432
+```bash
+cp .env.example .env
 ```
 
->  **Never commit `.env` to GitHub.** It is already listed in `.gitignore`.
+```env
+# Django
+SECRET_KEY=replace-me-with-a-long-random-string
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+CORS_ALLOWED_ORIGINS=http://localhost:5500,http://127.0.0.1:5500
+
+# PostgreSQL — must match database/.env
+POSTGRES_DB=home_service_db
+POSTGRES_USER=homefix
+POSTGRES_PASSWORD=change-me
+POSTGRES_PORT=5432
+DB_HOST=localhost
+```
+
+Generate a fresh `SECRET_KEY` with:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(64))"
+```
+
+> **Never commit `.env` to GitHub.** It's already in `.gitignore`. Only
+> `.env.example` should ever be checked in.
 
 ---
 

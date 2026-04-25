@@ -32,8 +32,16 @@ class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        username = request.data.get('username')
+        identifier = request.data.get('username') or request.data.get('email')
         password = request.data.get('password')
+
+        # If the user entered an email, resolve it to the matching username first.
+        username = identifier
+        if identifier and '@' in identifier:
+            match = User.objects.filter(email__iexact=identifier).first()
+            if match:
+                username = match.username
+
         user = authenticate(username=username, password=password)
         if user:
             refresh = RefreshToken.for_user(user)
@@ -185,20 +193,55 @@ class ReviewCreateView(generics.CreateAPIView):
     serializer_class = ReviewSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         booking = serializer.validated_data['booking']
+
+        # Only the customer who owns the booking can review it
+        if booking.service_request.customer_id != request.user.id:
+            return Response(
+                {'error': 'You can only review your own bookings.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Only completed jobs can be reviewed
+        if booking.service_request.status != 'completed':
+            return Response(
+                {'error': 'You can only review a completed booking.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # One review per booking (Review.booking is OneToOne)
+        if Review.objects.filter(booking=booking).exists():
+            return Response(
+                {'error': 'This booking has already been reviewed.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         serializer.save(
-            customer=self.request.user,
-            worker=booking.service_request.worker
+            customer=request.user,
+            worker=booking.service_request.worker,
         )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class WorkerReviewsView(generics.ListAPIView):
+    """
+    GET /api/workers/{worker_profile_id}/reviews/
+
+    The <pk> in the URL is a WorkerProfile.id. Review.worker is a User FK,
+    so we resolve the profile → user and filter by that user.
+    """
     serializer_class = ReviewSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Review.objects.filter(worker_id=self.kwargs['pk'])
+        try:
+            profile = WorkerProfile.objects.get(pk=self.kwargs['pk'])
+        except WorkerProfile.DoesNotExist:
+            return Review.objects.none()
+        return Review.objects.filter(worker=profile.user).order_by('-created_at')
 
 
 # ─── DISPUTES ───────────────────────────────────────

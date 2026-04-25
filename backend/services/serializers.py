@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
+from django.db.models import Avg
 from .models import User, WorkerProfile, Category, ServiceRequest, Booking, Dispute, Review, Notification
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -18,14 +19,28 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'user_type', 'phone', 'address']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'user_type', 'phone', 'address']
 
 class WorkerProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    review_count = serializers.SerializerMethodField()
+    average_rating = serializers.SerializerMethodField()
 
     class Meta:
         model = WorkerProfile
-        fields = ['id', 'user', 'bio', 'skills', 'is_verified', 'is_approved']
+        fields = [
+            'id', 'user', 'bio', 'skills',
+            'category_name', 'area', 'hourly_rate', 'is_available',
+            'is_verified', 'is_approved',
+            'review_count', 'average_rating',
+        ]
+
+    def get_review_count(self, obj):
+        return Review.objects.filter(worker=obj.user).count()
+
+    def get_average_rating(self, obj):
+        result = Review.objects.filter(worker=obj.user).aggregate(avg=Avg('rating'))
+        return round(result['avg'], 1) if result['avg'] is not None else 5.0
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -33,10 +48,44 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description']
 
 class ServiceRequestSerializer(serializers.ModelSerializer):
+    customer_name = serializers.SerializerMethodField()
+    worker_name = serializers.SerializerMethodField()
+    category_name = serializers.SerializerMethodField()
+    booking_id = serializers.SerializerMethodField()
+    has_review = serializers.SerializerMethodField()
+
     class Meta:
         model = ServiceRequest
-        fields = ['id', 'customer', 'worker', 'category', 'description', 'address', 'status', 'created_at']
+        fields = [
+            'id', 'customer', 'customer_name', 'worker', 'worker_name',
+            'category', 'category_name', 'description', 'address',
+            'status', 'created_at', 'booking_id', 'has_review',
+        ]
         read_only_fields = ['customer', 'status', 'created_at']
+
+    def _full_name(self, u):
+        if not u:
+            return ''
+        return f"{u.first_name} {u.last_name}".strip() or u.username
+
+    def get_customer_name(self, obj):
+        return self._full_name(obj.customer)
+
+    def get_worker_name(self, obj):
+        return self._full_name(obj.worker)
+
+    def get_category_name(self, obj):
+        return obj.category.name if obj.category else ''
+
+    def get_booking_id(self, obj):
+        booking = Booking.objects.filter(service_request=obj).first()
+        return booking.id if booking else None
+
+    def get_has_review(self, obj):
+        booking = Booking.objects.filter(service_request=obj).first()
+        if not booking:
+            return False
+        return Review.objects.filter(booking=booking).exists()
 
 class BookingSerializer(serializers.ModelSerializer):
     class Meta:
@@ -50,10 +99,21 @@ class DisputeSerializer(serializers.ModelSerializer):
         read_only_fields = ['raised_by', 'status', 'created_at']
 
 class ReviewSerializer(serializers.ModelSerializer):
+    customer_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Review
-        fields = ['id', 'booking', 'customer', 'worker', 'rating', 'comment', 'created_at']
+        fields = [
+            'id', 'booking', 'customer', 'customer_name', 'worker',
+            'rating', 'comment', 'created_at',
+        ]
         read_only_fields = ['customer', 'worker', 'created_at']
+
+    def get_customer_name(self, obj):
+        if not obj.customer:
+            return 'Customer'
+        full = f"{obj.customer.first_name} {obj.customer.last_name}".strip()
+        return full or obj.customer.username
 
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
