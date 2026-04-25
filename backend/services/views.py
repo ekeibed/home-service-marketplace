@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
+from django.db import models
 from .models import User, WorkerProfile, Category, ServiceRequest, Booking, Dispute, Review, Notification
 from .serializers import (
     RegisterSerializer, UserSerializer, WorkerProfileSerializer,
@@ -59,8 +60,22 @@ class MyProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    # Fields the user is allowed to change on themselves via PATCH /users/me/.
+    # `user_type`, `is_staff`, `is_superuser`, `username`, etc. are intentionally
+    # excluded — letting them through would allow a customer to elevate to admin.
+    EDITABLE_FIELDS = {'first_name', 'last_name', 'email', 'phone', 'address'}
+
     def get_object(self):
         return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        cleaned = {k: v for k, v in request.data.items() if k in self.EDITABLE_FIELDS}
+        instance = self.get_object()
+        partial = kwargs.pop('partial', False)
+        serializer = self.get_serializer(instance, data=cleaned, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 # ─── WORKER PROFILES ────────────────────────────────
@@ -112,9 +127,21 @@ class ServiceRequestListCreateView(generics.ListCreateAPIView):
 
 
 class ServiceRequestDetailView(generics.RetrieveAPIView):
+    """
+    GET /api/requests/{id}/ — only the customer who filed the request,
+    the worker assigned to it, or staff can read it. Other authenticated
+    users get a 404 (we hide existence rather than leaking it).
+    """
     serializer_class = ServiceRequestSerializer
     permission_classes = [permissions.IsAuthenticated]
-    queryset = ServiceRequest.objects.all()
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return ServiceRequest.objects.all()
+        return ServiceRequest.objects.filter(
+            models.Q(customer=user) | models.Q(worker=user)
+        )
 
 
 class CancelRequestView(APIView):
@@ -136,36 +163,68 @@ class AcceptRequestView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
+        # Only workers can accept jobs.
+        if request.user.user_type != 'worker':
+            return Response(
+                {'error': 'Only workers can accept service requests.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         try:
             req = ServiceRequest.objects.get(pk=pk)
-            if req.status == 'pending':
-                req.worker = request.user
-                req.status = 'accepted'
-                req.save()
-                Booking.objects.create(service_request=req)
-                Notification.objects.create(
-                    user=req.customer,
-                    message=f'Your request has been accepted by {request.user.username}'
-                )
-                return Response({'message': 'Request accepted and booking created'})
-            return Response({'error': 'Request is not pending'}, status=400)
         except ServiceRequest.DoesNotExist:
             return Response({'error': 'Not found'}, status=404)
+
+        # If the customer addressed this request to a specific worker, only
+        # that worker can accept it. (Open requests with no worker assigned
+        # can be picked up by any worker.)
+        if req.worker_id and req.worker_id != request.user.id:
+            return Response(
+                {'error': 'This request was sent to a different worker.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if req.status != 'pending':
+            return Response({'error': 'Request is not pending'}, status=400)
+
+        req.worker = request.user
+        req.status = 'accepted'
+        req.save()
+        Booking.objects.create(service_request=req)
+        Notification.objects.create(
+            user=req.customer,
+            message=f'Your request has been accepted by {request.user.username}'
+        )
+        return Response({'message': 'Request accepted and booking created'})
 
 
 class DeclineRequestView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
+        # Only workers can decline jobs.
+        if request.user.user_type != 'worker':
+            return Response(
+                {'error': 'Only workers can decline service requests.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         try:
             req = ServiceRequest.objects.get(pk=pk)
-            if req.status == 'pending':
-                req.status = 'declined'
-                req.save()
-                return Response({'message': 'Request declined'})
-            return Response({'error': 'Request is not pending'}, status=400)
         except ServiceRequest.DoesNotExist:
             return Response({'error': 'Not found'}, status=404)
+
+        # Only the targeted worker can decline a targeted request.
+        if req.worker_id and req.worker_id != request.user.id:
+            return Response(
+                {'error': 'This request was sent to a different worker.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if req.status != 'pending':
+            return Response({'error': 'Request is not pending'}, status=400)
+
+        req.status = 'declined'
+        req.save()
+        return Response({'message': 'Request declined'})
 
 
 class CompleteRequestView(APIView):
@@ -255,13 +314,15 @@ class DisputeCreateView(generics.CreateAPIView):
 
 
 class DisputeListView(generics.ListAPIView):
+    """GET /api/disputes/all/ — admin-only, otherwise it leaks every dispute."""
     serializer_class = DisputeSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
     queryset = Dispute.objects.all()
 
 
 class ResolveDisputeView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    """POST /api/disputes/{id}/resolve/ — admin-only."""
+    permission_classes = [permissions.IsAdminUser]
 
     def post(self, request, pk):
         try:
