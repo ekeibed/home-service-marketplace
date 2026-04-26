@@ -335,7 +335,11 @@ function goToProfile(id) {
 }
 
 function handleLogout() {
-    window.location.href = 'index.html';
+    if (typeof apiLogout === 'function') {
+        apiLogout();
+    } else {
+        window.location.href = 'index.html';
+    }
 }
 
 function initUserDashboardFromQuery() {
@@ -634,3 +638,581 @@ async function loadProfile() {
 }
 
 loadProfile();
+
+// =============================================================================
+// EMPLOYEE DASHBOARD — Requests & Availability
+// =============================================================================
+
+if (document.getElementById('workerRequestList')) {
+    initWorkerDashboard();
+}
+
+async function initWorkerDashboard() {
+    await loadWorkerAvailability();
+    await loadWorkerRequests();
+
+    document.getElementById('workerAvailToggle')?.addEventListener('change', async function () {
+        try {
+            await apiUpdateWorkerProfile({ is_available: this.checked });
+        } catch {
+            // Not fatal — toggle still reflects UI state
+        }
+    });
+}
+
+async function loadWorkerAvailability() {
+    const toggle = document.getElementById('workerAvailToggle');
+    if (!toggle) return;
+    try {
+        const profile = await apiGetMyWorkerProfile();
+        toggle.checked = profile.is_available !== false;
+    } catch {
+        // Keep the default (checked) from HTML
+    }
+}
+
+async function loadWorkerRequests() {
+    const listEl = document.getElementById('workerRequestList');
+    const noEl = document.getElementById('workerNoRequests');
+    if (!listEl) return;
+
+    let requests = [];
+    try {
+        requests = (await apiGetMyRequests()) || [];
+    } catch {
+        requests = HomeFixMock.initialWorkerRequests || [];
+    }
+
+    // Only show active requests (not declined/cancelled)
+    const active = requests.filter(r => r.status !== 'declined' && r.status !== 'cancelled');
+
+    if (!active.length) {
+        listEl.innerHTML = '';
+        if (noEl) noEl.style.display = 'block';
+        return;
+    }
+    if (noEl) noEl.style.display = 'none';
+    renderWorkerRequests(active);
+}
+
+function renderWorkerRequests(list) {
+    const listEl = document.getElementById('workerRequestList');
+    if (!listEl) return;
+
+    listEl.innerHTML = list.map(r => {
+        const customerName = r.customer_name || r.customer || 'Customer';
+        const initials = r.initials ||
+            String(customerName).split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0, 2) || 'C';
+        const service = r.service || r.category_name || 'Service';
+        const address = r.address || '—';
+        const problem = r.problem || r.description || '';
+        const when = r.when || (r.created_at
+            ? new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+            : '');
+        const status = r.status || 'pending';
+
+        let actions = '';
+        if (status === 'pending') {
+            actions = `
+                <button class="btn-main"    onclick="workerAccept(${r.id})">Accept</button>
+                <button class="btn-outline" onclick="workerDecline(${r.id})">Decline</button>`;
+        } else if (status === 'accepted') {
+            actions = `<button class="btn-main" onclick="workerComplete(${r.id})">Mark complete</button>`;
+        }
+
+        return `
+        <div class="booking-card" id="wreq-${r.id}">
+            <div class="booking-card-top">
+                <div class="booking-pro-avatar">${initials}</div>
+                <div class="booking-pro-info">
+                    <div class="booking-pro-name">${customerName}</div>
+                    <div class="booking-service">${service}</div>
+                </div>
+                <span class="booking-status status-${status}">${status}</span>
+            </div>
+            ${when   ? `<div class="booking-date">🕐 ${when}</div>` : ''}
+            ${address !== '—' ? `<div class="booking-address">📍 ${address}</div>` : ''}
+            ${problem ? `<div class="booking-date" style="margin-top:4px;">📝 ${problem}</div>` : ''}
+            <div class="booking-actions">${actions}</div>
+        </div>`;
+    }).join('');
+}
+
+async function workerAccept(id) {
+    try {
+        await apiAcceptRequest(id);
+    } catch { /* update UI anyway for mock mode */ }
+    _updateWorkerRequestStatus(id, 'accepted');
+}
+
+async function workerDecline(id) {
+    try {
+        await apiDeclineRequest(id);
+    } catch { /* update UI anyway for mock mode */ }
+    const el = document.getElementById(`wreq-${id}`);
+    if (el) el.remove();
+    _checkWorkerEmpty();
+}
+
+async function workerComplete(id) {
+    try {
+        await apiCompleteRequest(id);
+    } catch { /* update UI anyway for mock mode */ }
+    _updateWorkerRequestStatus(id, 'completed');
+}
+
+function _updateWorkerRequestStatus(id, newStatus) {
+    const card = document.getElementById(`wreq-${id}`);
+    if (!card) return;
+
+    const badge = card.querySelector('.booking-status');
+    if (badge) {
+        badge.className = `booking-status status-${newStatus}`;
+        badge.textContent = newStatus;
+    }
+
+    const actionsEl = card.querySelector('.booking-actions');
+    if (actionsEl) {
+        if (newStatus === 'accepted') {
+            actionsEl.innerHTML = `<button class="btn-main" onclick="workerComplete(${id})">Mark complete</button>`;
+        } else {
+            actionsEl.innerHTML = '';
+        }
+    }
+}
+
+function _checkWorkerEmpty() {
+    const listEl = document.getElementById('workerRequestList');
+    const noEl = document.getElementById('workerNoRequests');
+    if (listEl && noEl && !listEl.children.length) noEl.style.display = 'block';
+}
+
+// =============================================================================
+// MY ACCOUNT — Profile, Photo, Password, Bookings
+// =============================================================================
+
+function switchTab(el, tabName) {
+    document.querySelectorAll('.acc-tab').forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+    });
+    el.classList.add('active');
+    el.setAttribute('aria-selected', 'true');
+
+    document.querySelectorAll('.account-tab-panel').forEach(p => { p.style.display = 'none'; });
+    const panel = document.getElementById('tab-' + tabName);
+    if (panel) panel.style.display = 'block';
+
+    if (tabName === 'bookings') loadMyAccountBookings();
+}
+
+function handlePhotoUpload(inputId, avatarId, initialsId) {
+    const input = document.getElementById(inputId);
+    if (!input || !input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const avatar = document.getElementById(avatarId);
+        if (avatar) {
+            avatar.innerHTML = `<img src="${e.target.result}" alt="Profile photo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`;
+        }
+        const initials = document.getElementById(initialsId);
+        if (initials) initials.style.display = 'none';
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+async function saveProfile() {
+    const nameParts = (document.getElementById('editName')?.value || '').trim().split(/\s+/);
+    const first_name = nameParts[0] || '';
+    const last_name = nameParts.slice(1).join(' ') || '';
+    const email = (document.getElementById('editEmail')?.value || '').trim();
+    const phone = (document.getElementById('editPhone')?.value || '').trim();
+    const address = (document.getElementById('editCity')?.value || '').trim();
+
+    try {
+        await apiUpdateProfile({ first_name, last_name, email, phone, address });
+        const fullName = `${first_name} ${last_name}`.trim();
+        const nameEl = document.getElementById('accountName');
+        if (nameEl) nameEl.textContent = fullName;
+        const emailEl = document.getElementById('accountEmail');
+        if (emailEl) emailEl.textContent = email;
+        alert('Profile updated!');
+    } catch (err) {
+        alert(err && err.message ? err.message : 'Failed to update profile.');
+    }
+}
+
+function changePassword() {
+    const current = document.getElementById('currentPass')?.value || '';
+    const newPass = document.getElementById('newPass')?.value || '';
+    if (!current || !newPass) { alert('Please fill in both password fields.'); return; }
+    if (newPass.length < 6) { alert('New password must be at least 6 characters.'); return; }
+    // No dedicated password-change endpoint in the current backend.
+    alert('Password change is not supported in this demo build.');
+}
+
+function _bookingStatusLabel(status) {
+    const map = { pending: 'pending', accepted: 'confirmed', completed: 'completed', cancelled: 'cancelled', declined: 'declined' };
+    return map[status] || status || 'pending';
+}
+
+async function loadMyAccountBookings() {
+    const listEl = document.getElementById('bookingsList');
+    const noEl = document.getElementById('noBookings');
+    if (!listEl) return;
+
+    let bookings = [];
+    try {
+        bookings = (await apiGetMyRequests()) || [];
+    } catch {
+        bookings = (HomeFixMock.initialCustomerBookings || []).map(b => ({
+            id: b.bookingId,
+            service: b.service,
+            worker_name: b.name,
+            worker_profile_id: b.id,
+            status: b.status,
+            created_at: b.date,
+            address: '',
+        }));
+    }
+
+    if (!bookings.length) {
+        listEl.innerHTML = '';
+        if (noEl) noEl.style.display = 'block';
+        return;
+    }
+    if (noEl) noEl.style.display = 'none';
+
+    listEl.innerHTML = bookings.map(b => {
+        const status = _bookingStatusLabel(b.status);
+        const workerName = b.worker_name || (b.worker ? String(b.worker) : 'Professional');
+        const service = b.service || b.category_name || 'Service';
+        const dateStr = b.created_at
+            ? new Date(b.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+            : '';
+        const canCancel = b.status === 'pending' || b.status === 'accepted';
+        const profileBtn = b.worker_profile_id
+            ? `<button class="btn-profile" onclick="goToProfile(${b.worker_profile_id})">View Pro</button>` : '';
+        const cancelBtn = canCancel
+            ? `<button class="btn-outline" onclick="cancelBooking(${b.id})">Cancel</button>` : '';
+        return `
+        <div class="booking-card">
+            <div class="booking-card-top">
+                <div class="booking-pro-avatar">${(workerName[0] || '?').toUpperCase()}</div>
+                <div class="booking-pro-info">
+                    <div class="booking-pro-name">${workerName}</div>
+                    <div class="booking-service">${service}</div>
+                </div>
+                <span class="booking-status status-${status}">${status}</span>
+            </div>
+            ${dateStr ? `<div class="booking-date">📅 ${dateStr}</div>` : ''}
+            ${b.address ? `<div class="booking-address">📍 ${b.address}</div>` : ''}
+            <div class="booking-actions">${cancelBtn}${profileBtn}</div>
+        </div>`;
+    }).join('');
+}
+
+async function cancelBooking(id) {
+    if (!confirm('Cancel this booking?')) return;
+    try {
+        await apiCancelRequest(id);
+    } catch { /* fall through — update UI anyway for mock mode */ }
+    await loadMyAccountBookings();
+}
+
+// Init my-account page: populate form fields from backend
+if (document.getElementById('editName') && typeof apiGetMyProfile === 'function') {
+    apiGetMyProfile().then(user => {
+        const fullName = ((user.first_name || '') + ' ' + (user.last_name || '')).trim() || user.username || 'User';
+        const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+        const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+        setTxt('accountName', fullName);
+        setTxt('accountEmail', user.email || '');
+        setVal('editName', fullName);
+        setVal('editEmail', user.email || '');
+        setVal('editPhone', user.phone || '');
+        setVal('editCity', user.address || '');
+
+        const initialsEl = document.getElementById('accountAvatarInitials');
+        if (initialsEl) {
+            initialsEl.textContent = fullName.split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0, 2) || 'U';
+        }
+    }).catch(() => { /* keep HTML defaults */ });
+}
+
+// =============================================================================
+// ADMIN PANEL
+// =============================================================================
+
+let _adminBookings = [];
+let _adminUsers = [];
+
+if (document.getElementById('adminShell')) {
+    // Sidebar navigation
+    document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.admin-nav-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const section = this.getAttribute('data-admin-section');
+            document.querySelectorAll('.admin-section').forEach(s => { s.hidden = true; });
+            const target = document.getElementById(`admin-section-${section}`);
+            if (target) target.hidden = false;
+        });
+    });
+
+    // Wire up filter/search inputs
+    document.getElementById('adminBookingFilter')?.addEventListener('change', renderAdminBookingsTable);
+    document.getElementById('adminBookingSearch')?.addEventListener('input', renderAdminBookingsTable);
+    document.getElementById('adminUserSearch')?.addEventListener('input', renderAdminUsersTable);
+
+    // Load all data
+    initAdminPanel();
+}
+
+async function initAdminPanel() {
+    await Promise.allSettled([loadAdminPending(), loadAdminBookings(), loadAdminUsers()]);
+    loadAdminStats();
+}
+
+function loadAdminStats() {
+    const statsEl = document.getElementById('adminDashboardStats');
+    if (!statsEl) return;
+    const pendingCount = document.querySelectorAll('#adminPendingList .booking-card').length;
+    statsEl.innerHTML = `
+        <div class="admin-stat-card"><div class="stat-value">${_adminUsers.length || '—'}</div><div class="stat-label">Total users</div></div>
+        <div class="admin-stat-card"><div class="stat-value">${_adminBookings.length || '—'}</div><div class="stat-label">Total bookings</div></div>
+        <div class="admin-stat-card"><div class="stat-value">${pendingCount}</div><div class="stat-label">Pending applications</div></div>
+    `;
+}
+
+async function loadAdminPending() {
+    const listEl = document.getElementById('adminPendingList');
+    const noEl = document.getElementById('adminNoPending');
+    if (!listEl) return;
+
+    const pending = HomeFixMock.initialPendingWorkerApplications || [];
+    if (!pending.length) {
+        listEl.innerHTML = '';
+        if (noEl) noEl.style.display = 'block';
+        return;
+    }
+    if (noEl) noEl.style.display = 'none';
+
+    listEl.innerHTML = pending.map(p => `
+        <div class="booking-card" id="pending-${p.id}">
+            <div class="booking-card-top">
+                <div class="booking-pro-avatar">${p.name.split(' ').map(w => w[0] || '').join('').slice(0, 2).toUpperCase()}</div>
+                <div class="booking-pro-info">
+                    <div class="booking-pro-name">${p.name}</div>
+                    <div class="booking-service">${p.service} · ${p.email}</div>
+                </div>
+                <span class="booking-status status-pending">pending</span>
+            </div>
+            <div class="booking-actions">
+                <button class="btn-main" onclick="adminApproveWorker(${p.id})">Approve</button>
+                <button class="btn-outline" onclick="adminRejectWorker(${p.id})">Reject</button>
+                <button class="btn-profile" onclick="openAdminDetailModal('applicant',${p.id})">Details</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function loadAdminBookings() {
+    try {
+        _adminBookings = (await apiGetMyRequests()) || [];
+    } catch {
+        _adminBookings = (HomeFixMock.initialCustomerBookings || []).map(b => ({
+            id: b.bookingId,
+            service: b.service,
+            customer_name: b.customer,
+            worker_name: b.name,
+            status: b.status,
+            created_at: b.date,
+            address: '',
+            description: '',
+        }));
+    }
+    renderAdminBookingsTable();
+}
+
+async function loadAdminUsers() {
+    try {
+        _adminUsers = (await apiGetAllUsers()) || [];
+    } catch {
+        _adminUsers = [];
+    }
+    renderAdminUsersTable();
+}
+
+function renderAdminBookingsTable() {
+    const tbody = document.getElementById('adminBookingsTableBody');
+    const noEl = document.getElementById('adminNoBookings');
+    if (!tbody) return;
+
+    const filterVal = document.getElementById('adminBookingFilter')?.value || 'all';
+    const searchVal = (document.getElementById('adminBookingSearch')?.value || '').toLowerCase();
+
+    const filtered = _adminBookings.filter(b => {
+        const s = (b.status || '').toLowerCase();
+        const matchFilter =
+            filterVal === 'all' ||
+            (filterVal === 'pending' && (s === 'pending' || s === 'accepted')) ||
+            (filterVal === 'completed' && s === 'completed') ||
+            (filterVal === 'cancelled' && (s === 'cancelled' || s === 'declined'));
+        const matchSearch = !searchVal ||
+            (b.service || '').toLowerCase().includes(searchVal) ||
+            (b.customer_name || b.customer || '').toLowerCase().includes(searchVal) ||
+            (b.worker_name || String(b.worker || '')).toLowerCase().includes(searchVal);
+        return matchFilter && matchSearch;
+    });
+
+    if (!filtered.length) {
+        tbody.innerHTML = '';
+        if (noEl) noEl.style.display = 'block';
+        return;
+    }
+    if (noEl) noEl.style.display = 'none';
+
+    tbody.innerHTML = filtered.map(b => {
+        const dateStr = b.created_at
+            ? new Date(b.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+            : '—';
+        const canCancel = b.status === 'pending' || b.status === 'accepted';
+        const statusLabel = _bookingStatusLabel(b.status);
+        return `
+            <tr>
+                <td>${b.service || b.category_name || '—'}</td>
+                <td>${b.customer_name || b.customer || '—'}</td>
+                <td>${b.worker_name || b.worker || '—'}</td>
+                <td><span class="booking-status status-${statusLabel}">${statusLabel}</span></td>
+                <td>${dateStr}</td>
+                <td style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                    ${canCancel ? `<button class="btn-outline" style="padding:4px 10px;font-size:12px" onclick="adminCancelBooking(${b.id})">Cancel</button>` : ''}
+                    <button class="btn-profile" style="padding:4px 10px;font-size:12px" onclick="openAdminDetailModal('booking',${b.id})">Details</button>
+                </td>
+            </tr>`;
+    }).join('');
+}
+
+function renderAdminUsersTable() {
+    const tbody = document.getElementById('adminUsersTableBody');
+    const noEl = document.getElementById('adminNoUsers');
+    if (!tbody) return;
+
+    const searchVal = (document.getElementById('adminUserSearch')?.value || '').toLowerCase();
+    const filtered = _adminUsers.filter(u =>
+        !searchVal ||
+        (u.username || '').toLowerCase().includes(searchVal) ||
+        (u.first_name || '').toLowerCase().includes(searchVal) ||
+        (u.last_name || '').toLowerCase().includes(searchVal) ||
+        (u.user_type || '').toLowerCase().includes(searchVal)
+    );
+
+    if (!filtered.length) {
+        tbody.innerHTML = '';
+        if (noEl) noEl.style.display = 'block';
+        return;
+    }
+    if (noEl) noEl.style.display = 'none';
+
+    tbody.innerHTML = filtered.map(u => {
+        const name = ((u.first_name || '') + ' ' + (u.last_name || '')).trim() || u.username || '—';
+        const isActive = u.is_active !== false;
+        return `
+            <tr>
+                <td>${name}</td>
+                <td>${u.user_type || 'customer'}</td>
+                <td><span class="booking-status status-${isActive ? 'completed' : 'cancelled'}">${isActive ? 'active' : 'suspended'}</span></td>
+                <td><button class="btn-profile" style="padding:4px 10px;font-size:12px" onclick="openAdminDetailModal('user',${u.id})">Details</button></td>
+            </tr>`;
+    }).join('');
+}
+
+function openAdminDetailModal(type, id) {
+    const overlay = document.getElementById('adminDetailOverlay');
+    const body = document.getElementById('adminDetailModalBody');
+    if (!overlay || !body) return;
+
+    let html = '';
+    if (type === 'applicant') {
+        const p = (HomeFixMock.initialPendingWorkerApplications || []).find(a => a.id === id);
+        if (p) {
+            html = `
+                <h3>${p.name}</h3>
+                <p><strong>Service:</strong> ${p.service}</p>
+                <p><strong>Email:</strong> ${p.email}</p>
+                <p><strong>Phone:</strong> ${p.phone}</p>
+                <p><strong>Applied:</strong> ${p.submitted}</p>
+                <div style="margin-top:16px;display:flex;gap:8px;">
+                    <button class="btn-main" onclick="adminApproveWorker(${id});closeAdminDetailModal()">Approve</button>
+                    <button class="btn-outline" onclick="adminRejectWorker(${id});closeAdminDetailModal()">Reject</button>
+                </div>`;
+        }
+    } else if (type === 'booking') {
+        const b = _adminBookings.find(x => x.id === id);
+        if (b) {
+            html = `
+                <h3>Booking #${b.id}</h3>
+                <p><strong>Service:</strong> ${b.service || '—'}</p>
+                <p><strong>Customer:</strong> ${b.customer_name || b.customer || '—'}</p>
+                <p><strong>Professional:</strong> ${b.worker_name || b.worker || '—'}</p>
+                <p><strong>Status:</strong> ${_bookingStatusLabel(b.status)}</p>
+                ${b.address ? `<p><strong>Address:</strong> ${b.address}</p>` : ''}
+                ${b.description ? `<p><strong>Notes:</strong> ${b.description}</p>` : ''}`;
+        }
+    } else if (type === 'user') {
+        const u = _adminUsers.find(x => x.id === id);
+        if (u) {
+            const name = ((u.first_name || '') + ' ' + (u.last_name || '')).trim() || u.username || '—';
+            html = `
+                <h3>${name}</h3>
+                <p><strong>Role:</strong> ${u.user_type || '—'}</p>
+                <p><strong>Email:</strong> ${u.email || '—'}</p>
+                <p><strong>Status:</strong> ${u.is_active !== false ? 'Active' : 'Suspended'}</p>`;
+        }
+    }
+
+    body.innerHTML = html || '<p>Details not available.</p>';
+    overlay.classList.add('active');
+}
+
+function closeAdminDetailModal() {
+    const overlay = document.getElementById('adminDetailOverlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function closeAdminDetailOutside(event) {
+    if (event.target === document.getElementById('adminDetailOverlay')) closeAdminDetailModal();
+}
+
+async function adminApproveWorker(id) {
+    try { await apiApproveWorker(id); } catch { /* mock mode */ }
+    const el = document.getElementById(`pending-${id}`);
+    if (el) el.remove();
+    const list = document.getElementById('adminPendingList');
+    const noEl = document.getElementById('adminNoPending');
+    if (list && !list.children.length && noEl) noEl.style.display = 'block';
+    loadAdminStats();
+    alert('Worker approved!');
+}
+
+function adminRejectWorker(id) {
+    const el = document.getElementById(`pending-${id}`);
+    if (el) el.remove();
+    const list = document.getElementById('adminPendingList');
+    const noEl = document.getElementById('adminNoPending');
+    if (list && !list.children.length && noEl) noEl.style.display = 'block';
+    loadAdminStats();
+    alert('Application rejected.');
+}
+
+async function adminCancelBooking(id) {
+    if (!confirm('Cancel this booking?')) return;
+    try {
+        await apiCancelRequest(id);
+    } catch { /* update locally for mock mode */ }
+    const b = _adminBookings.find(x => x.id === id);
+    if (b) b.status = 'cancelled';
+    renderAdminBookingsTable();
+}

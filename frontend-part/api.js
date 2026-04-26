@@ -7,6 +7,47 @@ function dashboardForUserType(userType) {
 
 // ─── Core fetch wrapper ───────────────────────────────────────────────────────
 
+const BASE_URL = 'http://127.0.0.1:8000/api';
+
+async function apiFetch(path, options = {}) {
+    const token = localStorage.getItem('hf_access_token');
+    const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(BASE_URL + path, { ...options, headers });
+    let data;
+    try { data = await res.json(); } catch { data = null; }
+
+    if (!res.ok) {
+        const msg = (data && (data.error || data.detail ||
+            (data.non_field_errors && data.non_field_errors[0]))) ||
+            `Request failed (${res.status})`;
+        const err = new Error(msg);
+        err.status = res.status;
+        err.data = data;
+        throw err;
+    }
+    return data;
+}
+
+// ─── Session helpers ─────────────────────────────────────────────────────────
+
+function saveSession(data) {
+    localStorage.setItem('hf_access_token', data.access);
+    localStorage.setItem('hf_refresh_token', data.refresh);
+    localStorage.setItem('hf_user', JSON.stringify(data.user));
+}
+
+function clearSession() {
+    localStorage.removeItem('hf_access_token');
+    localStorage.removeItem('hf_refresh_token');
+    localStorage.removeItem('hf_user');
+}
+
+function getStoredUser() {
+    try { return JSON.parse(localStorage.getItem('hf_user')); } catch { return null; }
+}
+
 /**
  * Send a request to the backend.
  * - Attaches the JWT token if one is stored.
@@ -176,5 +217,115 @@ function workerProfileToCard(wp) {
         available: wp.is_available !== false,
         photo: wp.photo_url || null,
     };
+}
+
+// =============================================================================
+// WORKERS — /api/workers/
+// =============================================================================
+
+/** GET /api/workers/ — approved worker list. */
+async function apiGetWorkers() {
+    return apiFetch('/workers/');
+}
+
+/** GET /api/workers/{id}/ — single worker profile. */
+async function apiGetWorker(id) {
+    return apiFetch(`/workers/${id}/`);
+}
+
+/** GET /api/workers/{id}/reviews/ — public reviews for a worker profile. */
+async function apiGetWorkerReviews(workerProfileId) {
+    return apiFetch(`/workers/${workerProfileId}/reviews/`);
+}
+
+// =============================================================================
+// SERVICE REQUESTS — /api/requests/
+// =============================================================================
+
+/** GET /api/requests/ — returns the caller's requests (customer or worker). */
+async function apiGetMyRequests() {
+    return apiFetch('/requests/');
+}
+
+/** POST /api/requests/{id}/cancel/ — customer cancels a pending/accepted request. */
+async function apiCancelRequest(id) {
+    return apiFetch(`/requests/${id}/cancel/`, { method: 'POST' });
+}
+
+// =============================================================================
+// PROFILE — /api/users/me/
+// =============================================================================
+
+/** GET /api/users/me/ — current user's profile. */
+async function apiGetMyProfile() {
+    return apiFetch('/users/me/');
+}
+
+/**
+ * PATCH /api/users/me/ — update editable profile fields.
+ * Backend whitelist: first_name, last_name, email, phone, address.
+ */
+async function apiUpdateProfile(data) {
+    return apiFetch('/users/me/', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+    });
+}
+
+// =============================================================================
+// ADMIN — /api/admin/  &  /api/workers/{id}/approve/
+// =============================================================================
+
+// =============================================================================
+// WORKER PROFILE (own) — /api/workers/profile/
+// =============================================================================
+
+/** GET /api/workers/profile/ — the logged-in worker's own profile. */
+async function apiGetMyWorkerProfile() {
+    return apiFetch('/workers/profile/');
+}
+
+/**
+ * PATCH /api/workers/profile/ — update the logged-in worker's own profile.
+ * Pass any subset of { bio, skills, area, hourly_rate, is_available }.
+ */
+async function apiUpdateWorkerProfile(data) {
+    return apiFetch('/workers/profile/', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+    });
+}
+
+// =============================================================================
+// REQUEST ACTIONS (worker side) — /api/requests/{id}/accept|decline|complete/
+// =============================================================================
+
+/** POST /api/requests/{id}/accept/ — worker accepts a pending request. */
+async function apiAcceptRequest(id) {
+    return apiFetch(`/requests/${id}/accept/`, { method: 'POST' });
+}
+
+/** POST /api/requests/{id}/decline/ — worker declines a pending request. */
+async function apiDeclineRequest(id) {
+    return apiFetch(`/requests/${id}/decline/`, { method: 'POST' });
+}
+
+/** POST /api/requests/{id}/complete/ — worker marks an accepted request as complete. */
+async function apiCompleteRequest(id) {
+    return apiFetch(`/requests/${id}/complete/`, { method: 'POST' });
+}
+
+// =============================================================================
+// ADMIN — /api/admin/  &  /api/workers/{id}/approve/
+// =============================================================================
+
+/** GET /api/admin/users/ — full user list (admin only). */
+async function apiGetAllUsers() {
+    return apiFetch('/admin/users/');
+}
+
+/** POST /api/workers/{id}/approve/ — approve a pending worker application (admin only). */
+async function apiApproveWorker(id) {
+    return apiFetch(`/workers/${id}/approve/`, { method: 'POST' });
 }
 
