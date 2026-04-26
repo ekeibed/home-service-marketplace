@@ -18,7 +18,6 @@
    - State Diagrams
      - Service Request State Diagram
      - Booking State Diagram
-     - Payment State Diagram
 6. Process Architecture
    - Process View
    - Main Runtime Processes
@@ -38,8 +37,7 @@
 9. Scenarios
    - Overview use case Diagram 
    - Sc-Registration and login
-   - Sc-Service Requests and Booking 
-   -  Sc-Payment
+   - Sc-Service Requests and Booking
 10. Size and Performance
 11. Quality
 12. Appendices
@@ -54,7 +52,6 @@
 - Figure 5.1: UML Class Diagram  
 - Figure 5.2: Service Request State Diagram  
 - Figure 5.3: Booking State Diagram  
-- Figure 5.4: Payment State Diagram  
 - Figure 6.1: Sequence Diagram – Customer Requests Service  
 - Figure 6.2: Activity Diagram  
 - Figure 6.3: Sequence Diagram – Admin Approves Employee  
@@ -66,7 +63,6 @@
 - Figure 9.1: System Overview Use Case Diagram  
 - Figure 9.2: Use Case Diagram – Registration and Login  
 - Figure 9.3: Use Case Diagram – Service Request and Booking  
-- Figure 9.4: Use Case Diagram – Payment  
 
 ----
 
@@ -78,7 +74,7 @@ This scope defines the functional boundaries of the **Home Service System**, ide
 * **User Management & Authentication:** The system provides secure user registration and login for Customers, Service Providers, and Administrators. Each user has a profile and access permissions based on their role.
 * **Service Discovery & Catalog:** A centralized directory allowing users to browse available service categories. The architecture supports dynamic metadata (descriptions, base pricing, and provider information).
 * **Service Request Lifecycle:** A state-managed workflow to handle the end-to-end progression of a job, from initial creation and scheduling to "In-Progress" and "Completed" status updates.
-* **Transaction Information Module:** The system manages service-related cost information. It supports recording service prices and includes online payment methods.
+* **Transaction Information Module:** The system manages service-related cost information. It supports recording service prices and hourly rates displayed on worker profiles.
 * **Asynchronous Notification Engine:** A messaging system designed to trigger alerts for critical lifecycle events, such as booking confirmations or status changes, via the web interface.
 * **Feedback & Rating System:** The system allows users to provide ratings and feedback after completing a service to help maintain service quality.
 
@@ -206,7 +202,7 @@ The logical view is concerned with the functionality that the system provides to
 
 ### 5.1 Class Diagram
 
-The class diagram captures the primary domain entities of the system and their structural relationships. It shows the three user roles (Customer, Worker, Admin) inheriting from a base User class, along with the core entities that support the platform's main features.
+The class diagram captures the primary domain entities of the system and their structural relationships. It shows the three user roles (Customer, Worker, Admin) inheriting from a base User class, along with the core entities that support the platform's main features: WorkerProfile, Category, ServiceRequest, Booking, Dispute, Review, and Notification. There is no Payment entity — the system records service pricing via the WorkerProfile's hourly rate but does not process financial transactions.
 
 ![Figure 5.1 — Class Diagram](figures/fig5_1_class_diagram.png)
 
@@ -222,7 +218,7 @@ State diagrams describe the lifecycle of the most behaviourally significant enti
 
 #### 5.2.1 Service Request State Diagram
 
-The Service Request lifecycle begins when a Customer submits a request and progresses through worker assignment, job execution, and completion. A Disputed state handles conflicts that require Admin intervention.
+The Service Request lifecycle begins when a Customer submits a request (status: *Pending*). A Worker can then accept or decline it. If accepted, the Worker marks the job done, moving the request directly to *Completed*. After completion, the Customer may optionally leave a Review for the Worker — this creates a separate `Review` entity and does **not** change the ServiceRequest status, which stays *Completed*. A Customer may cancel a Pending or Accepted request at any time (*Cancelled*). The states *Declined* and *Cancelled* are terminal.
 
 ![Figure 5.2 — State Diagram: Service Request](figures/fig5_2_state_service_request.png)
 
@@ -232,7 +228,7 @@ The Service Request lifecycle begins when a Customer submits a request and progr
 
 #### 5.2.2 Booking State Diagram
 
-A Booking is created once a Worker accepts a Service Request. It tracks the agreement between Customer and Worker from scheduling through to job completion.
+A Booking record is automatically created the moment a Worker accepts a Service Request. It is a simple record containing only a reference to the `ServiceRequest` and a `confirmed_at` timestamp — it has **no status field of its own**. The full job lifecycle (accepted → completed / cancelled) is tracked on the linked `ServiceRequest`. Once the `ServiceRequest` reaches *Completed*, the Customer may optionally add a `Review` to the Booking.
 
 ![Figure 5.3 — State Diagram: Booking](figures/fig5_3_state_booking.png)
 
@@ -240,13 +236,6 @@ A Booking is created once a Worker accepts a Service Request. It tracks the agre
 
 ---
 
-#### 5.2.3 Payment State Diagram
-
-The Payment lifecycle is triggered when a Booking is completed. It covers the customer payment flow, gateway processing, and handles failures and refunds.
-
-![Figure 5.4 — State Diagram: Payment](figures/fig5_4_state_payment.png)
-
-*Figure 5.4 — State Diagram: Payment*
 
 
 
@@ -443,7 +432,7 @@ The diagram below shows how the Frontend, Backend (Django), and Database (Postgr
 
 The scenarios view — also known as the use case view — illustrates the architecture through a small set of use cases that describe the most significant sequences of interactions between actors and system objects. The scenarios are used to identify architectural elements and validate that the system design supports all core end-user needs.
 
-The system involves three primary actors: **Customer** (requests and pays for home services), **Worker** (accepts and fulfils service requests), and **Admin** (governs the platform and verifies workers).
+The system involves three primary actors: **Customer** (browses and requests home services), **Worker** (accepts and fulfils service requests), and **Admin** (governs the platform and verifies workers). Payment processing is out of scope for the current implementation.
 
 ---
 
@@ -459,7 +448,7 @@ The system involves three primary actors: **Customer** (requests and pays for ho
 
 **Goal:** Allow users to register accounts and authenticate on the platform.  
 **Actors:** Customer, Worker, Admin  
-**Architectural elements exercised:** `User`, `Customer`, `Worker`, `Admin`, `Notification`
+**Architectural elements exercised:** `User`, `WorkerProfile`
 
 ![Figure 9.2 — Use Case Diagram: Registration & Login](figures/fig9_2_usecase_registration.png)
 
@@ -467,18 +456,18 @@ The system involves three primary actors: **Customer** (requests and pays for ho
 
 **Main Flow — Customer:**
 1. Customer fills in name, email, phone, and password and submits the registration form.
-2. System validates inputs and sends a verification code.
-3. Customer confirms the code; account is activated.
-4. Customer logs in and is redirected to the home screen.
+2. System validates inputs and creates the account immediately.
+3. A JWT token is returned; Customer is logged in and redirected to the home screen.
 
 **Main Flow — Worker:**
-1. Worker registers and uploads ID documents.
-2. System creates the account with a *Pending Verification* status and alerts the Admin.
-3. Admin reviews and approves; Worker receives an activation notification and can log in.
+1. Worker fills in registration form and selects a service type.
+2. System creates the account and a linked `WorkerProfile` (with `is_approved = False`).
+3. Admin reviews the worker from the admin panel and approves them.
+4. Worker can now log in and appear in search results.
 
 **Alternative Scenarios:**
-- Wrong password → error message shown; account locked after 5 failed attempts.
-- Forgot password → reset link sent by email.
+- Wrong credentials → "Invalid credentials" error message shown.
+- Worker not yet approved → Worker account exists but does not appear in listings until Admin approves.
 
 ---
 
@@ -486,48 +475,26 @@ The system involves three primary actors: **Customer** (requests and pays for ho
 
 **Goal:** Allow a Customer to post a service request and a Worker to accept and complete the job.  
 **Actors:** Customer, Worker  
-**Architectural elements exercised:** `ServiceRequest`, `Booking`, `ServiceCategory`, `Notification`
+**Architectural elements exercised:** `ServiceRequest`, `Booking`, `Category`, `Review`, `Notification`
 
 ![Figure 9.3 — Use Case Diagram: Service Request & Booking](figures/fig9_3_usecase_booking.png)
 
 *Figure 9.3 — Use Case Diagram: Service Request & Booking*
 
 **Main Flow:**
-1. Customer browses service categories and submits a request with description, location, and preferred time.
-2. System creates the `ServiceRequest` (status: *Pending*) and notifies nearby available Workers.
-3. Worker reviews and accepts the request.
-4. System creates a `Booking` (status: *Scheduled*) and notifies both parties.
-5. Worker confirms the date and time → Booking becomes *Confirmed*.
-6. Worker starts the job → status becomes *In Progress*.
-7. Worker marks job done → Booking and ServiceRequest both move to *Completed*.
+1. Customer browses service categories and selects a Worker to send a request to (description and address included).
+2. System creates the `ServiceRequest` (status: *Pending*) and makes it visible to the targeted Worker.
+3. Worker reviews the request and accepts it.
+4. System sets `ServiceRequest` status to *Accepted*, creates a `Booking` record, and sends a `Notification` to the Customer.
+5. Worker marks the job done → `ServiceRequest` moves to *Completed*; Customer receives a notification.
+6. Customer may optionally leave a `Review` (rating + comment) for the Worker.
 
 **Alternative Scenarios:**
-- No Worker accepts within 24 hours → request expires; Customer is notified.
-- Customer cancels before acceptance → request cancelled at no cost.
+- Worker declines the request → ServiceRequest status becomes *Declined*; Customer is notified.
+- Customer cancels a Pending or Accepted request → status becomes *Cancelled*.
+- A dispute arises during execution → Customer raises a `Dispute`; Admin resolves it.
 
 ---
-
-### SC-03 — Payment
-
-**Goal:** Process the Customer's payment for a completed service.  
-**Actors:** Customer, Admin  
-**Architectural elements exercised:** `Payment`, `Booking`, `Notification`
-
-![Figure 9.4 — Use Case Diagram: Payment](figures/fig9_4_usecase_payment.png)
-
-*Figure 9.4 — Use Case Diagram: Payment*
-
-**Main Flow:**
-1. Booking is marked *Completed*; system generates an invoice and notifies the Customer.
-2. Customer reviews the invoice and selects a payment method.
-3. System processes the payment through the gateway → status: *Processing*.
-4. Gateway confirms success → `Payment` status becomes *Completed*.
-5. Worker receives a payment confirmation notification.
-
-**Alternative Scenarios:**
-- Gateway error → *Failed* status; Customer prompted to retry.
-- Admin approves a refund → payment reversed; both parties notified.
-
 
 
 ---
