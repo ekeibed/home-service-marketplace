@@ -16,7 +16,6 @@
         <a href="index.html" class="logo">Home<span>Fix</span></a>
         <div class="nav-btns">
             <a href="user-dashboard.html" class="nav-link">Browse services</a>
-            <a href="contact-us.html" class="nav-link">Contact</a>
             <button class="btn-outline" onclick="handleLogout()">Log out</button>
         </div>
     </nav>
@@ -45,7 +44,8 @@
                 onclick="switchTab(this, 'profile')">
                 <span class="acc-tab-icon" aria-hidden="true">◇</span> Profile
             </button>
-            <button type="button" class="acc-tab" role="tab" aria-selected="false" onclick="switchTab(this, 'bookings')">
+            <button type="button" class="acc-tab" role="tab" aria-selected="false"
+                onclick="switchTab(this, 'bookings')">
                 <span class="acc-tab-icon" aria-hidden="true">◈</span> Bookings
             </button>
         </div>
@@ -78,7 +78,8 @@
                         </div>
                     </div>
                     <div class="account-card-footer">
-                        <button type="button" class="btn-main account-btn-save" onclick="saveProfile()">Save changes</button>
+                        <button type="button" class="btn-main account-btn-save" onclick="saveProfile()">Save
+                            changes</button>
                     </div>
                 </article>
 
@@ -90,7 +91,8 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="currentPass">Current password</label>
-                            <input type="password" id="currentPass" placeholder="••••••••" autocomplete="current-password" />
+                            <input type="password" id="currentPass" placeholder="••••••••"
+                                autocomplete="current-password" />
                         </div>
                         <div class="form-group">
                             <label for="newPass">New password</label>
@@ -112,7 +114,8 @@
                     <p class="account-bookings-sub">Track visits and manage pending jobs.</p>
                 </div>
                 <div class="bookings-list" id="bookingsList"></div>
-                <p class="no-results account-bookings-empty" id="noBookings" style="display:none">You have not booked any
+                <p class="no-results account-bookings-empty" id="noBookings" style="display:none">You have not booked
+                    any
                     professionals yet. <a href="user-dashboard.html">Browse services</a> to get started.</p>
             </div>
         </div>
@@ -120,6 +123,7 @@
     </section>
 
     <script src="mock-data.js"></script>
+    <script src="api.js"></script>
     <script src="app.js"></script>
 </body>
 
