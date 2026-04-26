@@ -503,34 +503,38 @@ The system involves three primary actors: **Customer** (browses and requests hom
 The Home Service Management System is designed as a lightweight web application intended for small to medium-scale usage. The system is not expected to handle extremely large enterprise-level traffic but should perform efficiently for a moderate number of users such as customers, employees, and administrators.
 
 ### System Size
-The system size is relatively small to medium, as it mainly consists of:
-- A web interface (frontend)
-- An application server (backend logic)
-- A database for storing users, services, and requests
 
-The database size is expected to grow gradually as more users register and more service requests are stored. However, the data structure is simple and manageable, making the system easy to maintain and extend.
+The system follows a 3-tier architecture and consists of:
+- A presentation layer (frontend): vanilla HTML, CSS, and JavaScript pages served as static files.
+- An application layer (backend): a Django 6.0.4 server with the Django REST Framework, exposing approximately 25 REST endpoints under /api/.
+- A data layer: a PostgreSQL relational database accessed through the Django ORM.
+
+
+The database schema contains 6 core entities (User, WorkerProfile, Category, ServiceRequest, Booking, Review). The schema is normalized with foreign-key relationships, which keeps it compact and easy to extend.
 
 ### Performance Considerations
-Performance is an important factor in this system, especially for user interactions such as searching for services and sending requests.
 
-The system is designed to:
-- Provide fast response times for search operations
-- Process user requests efficiently without noticeable delays
-- Handle multiple users at the same time (concurrent access)
+Performance is important especially for user-facing interactions such as searching workers, browsing categories, and submitting service requests. The system is designed to:
 
-Since the system follows a client-server architecture, the workload is mainly handled by the application server, which processes requests and communicates with the database.
+-Provide fast response times for search and filter operations, since DRF serializers return only the fields needed by the UI.
+-Process requests efficiently using Django's request/response cycle and PostgreSQL's connection handling.
+-Handle multiple concurrent users through Django's stateless request handling and JWT-based authentication, which avoids server-side session state.
+-Reduce repeated computation by using database aggregates (e.g., Avg('rating') for worker average ratings) instead of in-memory loops.
 
 ### Scalability
+
 Although the current version is designed for moderate usage, the system can be scaled in the future by:
-- Improving database performance (indexing, optimization)
-- Using more powerful servers
-- Separating services into different modules if needed
+- Database optimization: indexing frequently queried fields (e.g., category, status, worker) and using Django's select_related / prefetch_related to reduce query counts.
+- Vertical scaling: deploying on more powerful servers with additional CPU and memory.
+- Horizontal scaling: stateless JWT authentication allows running multiple backend instances behind a load balancer.
+- Modularization: the services/ Django app can be split into independent apps (users, workers, bookings) if the codebase grows.
 
-### Limitations
+- ### Limitations
 - The system is not optimized for very large-scale applications with thousands of simultaneous users
-- Performance may decrease if the number of users grows significantly without system upgrades
-
-Overall, the system provides acceptable performance for its intended use and can be improved in future versions.
+- The current deployment uses a single backend instance and a single database; there is no load balancing, caching layer (e.g., Redis), or distributed system in place.
+- Performance may degrade if the number of users grows significantly without infrastructure upgrades.
+  
+Overall, the system provides acceptable performance for its intended academic and small-business use cases, and its layered architecture makes future performance improvements straightforward.
 
 ## 11. Quality
 

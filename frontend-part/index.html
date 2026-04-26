@@ -16,7 +16,6 @@
     <nav class="nav">
         <a href="index.html" class="logo">Home<span>Fix</span></a>
         <div class="nav-btns">
-            <a href="contact-us.html" class="nav-link">Contact</a>
             <button class="btn-outline" onclick="openModal('login')">Log in</button>
             <button class="btn-solid" onclick="openModal('register')">Get Started</button>
         </div>
@@ -161,7 +160,7 @@
     <!-- FOOTER -->
     <footer class="footer">
         <div class="footer-logo">Home<span>Fix</span></div>
-        <p>© 2026 HomeFix. All rights reserved. · <a href="contact-us.html" class="footer-contact-link">Contact us</a></p>
+        <p>© 2026 HomeFix. All rights reserved.</p>
     </footer>
 
     <!-- MODAL OVERLAY -->
@@ -174,11 +173,14 @@
                 <h2>Welcome back</h2>
                 <p class="modal-sub">Log in to your account</p>
                 <div class="role-tabs">
-                    <div class="role-tab active" data-login-role="user" onclick="selectRole(this,'login','user')">User</div>
-                    <div class="role-tab" data-login-role="employee" onclick="selectRole(this,'login','employee')">Employee</div>
+                    <div class="role-tab active" data-login-role="user" onclick="selectRole(this,'login','user')">User
+                    </div>
+                    <div class="role-tab" data-login-role="employee" onclick="selectRole(this,'login','employee')">
+                        Employee</div>
                     <div class="role-tab" data-login-role="admin" onclick="selectRole(this,'login','admin')">Admin</div>
                 </div>
-                <p class="login-demo-hint">Demo: use any password. For User / Employee, enter a valid email (e.g. you@test.com). Admin can use any text in the first field.</p>
+                <p class="login-demo-hint">Demo: use any password. For User / Employee, enter a valid email (e.g.
+                    you@test.com). Admin can use any text in the first field.</p>
                 <div id="loginError" class="login-error" role="alert" hidden></div>
                 <input type="email" placeholder="Email address" id="loginEmail" />
                 <input type="password" placeholder="Password" id="loginPassword" />
@@ -227,6 +229,7 @@
     </div>
 
     <script src="mock-data.js"></script>
+    <script src="api.js"></script>
     <script src="app.js"></script>
 </body>
 
