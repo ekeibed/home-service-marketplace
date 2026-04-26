@@ -76,10 +76,10 @@ This scope defines the functional boundaries of the **Home Service System**, ide
 
 ###  Functional Scope (In-Scope)
 * **User Management & Authentication:** The system provides secure user registration and login for Customers, Service Providers, and Administrators. Each user has a profile and access permissions based on their role.
-* **Service Discovery & Catalog:** A centralized directory allowing users to browse available service categories. The architecture supports dynamic metadata (descriptions, base pricing, and provider information).
-* **Service Request Lifecycle:** A state-managed workflow to handle the end-to-end progression of a job, from initial creation and scheduling to "In-Progress" and "Completed" status updates.
-* **Transaction Information Module:** The system manages service-related cost information. It supports recording service prices and includes online payment methods.
-* **Asynchronous Notification Engine:** A messaging system designed to trigger alerts for critical lifecycle events, such as booking confirmations or status changes, via the web interface.
+* **Service Discovery & Catalog:** A centralized directory allowing users to browse available service categories. The architecture supports dynamic metadata (descriptions, provider information).
+* **Service Request Lifecycle:** A state-managed workflow that handles the full progression of a service request, from creation to final resolution. The request transitions through states such as "Pending", "Accepted", "Cancelled", and "Completed" based on user and worker actions.
+* **Transaction Information Module:** The system manages service-related cost information. It supports displaying service prices so users can view estimated costs before requesting a service.
+* **Synchronous Request Visibility System:** A mechanism that allows workers to view incoming service requests when they access their profile or dashboard, including booking updates and status changes through the web interface.
 * **Feedback & Rating System:** The system allows users to provide ratings and feedback after completing a service to help maintain service quality.
 
 ###  Out-of-Scope
@@ -576,7 +576,7 @@ This section defines the non-functional requirements that the system architectur
     **Scenario:** If there are 30 concurrent clients performing search requests through the Web Interface under normal operation, the system must display the results in less than 1 second.
 
 * **Security** The system must ensure that only registered users with valid credentials can access private account features.  
-    **Scenario:** If a user attempts to log in with an incorrect password through the Login Page during normal operation, the system must deny access and display an "Invalid Credentials" error message in less than 2 seconds.
+    **Scenario:** If a user attempts to log in with an incorrect password through the Login Page during normal operation, the system must deny access and display an "Invalid Credentials" error message in less than 4 seconds.
 
 * **Modifiability** The architecture must allow for the addition of new service categories or business rules with minimal manual effort.  
     **Scenario:** If a developer needs to add a new service category to the System Configuration during development time, the system must incorporate the change with less than 1 hour of manual effort.
@@ -587,8 +587,8 @@ This section defines the non-functional requirements that the system architectur
 * **Maintainability** The codebase must be structured to reduce technical debt and simplify the debugging process for developers.  
     **Scenario:** If a developer identifies a logic fault within the Notification Module during the maintenance phase, the developer must be able to isolate and  repair the bug with minimal side effects on other system modules.
 
-* **Testability** The design must support automated testing to ensure the system works correctly before any new deployment.  
-    **Scenario:** During development, when a developer executes a test script for the booking feature , the system must automatically validate the business logic  and generate a Pass/Fail status report in the terminal in less than 5 seconds .
+* **Testability** The design must support simple testing to ensure the system works correctly before any new deployment.
+    **Scenario:** During normal testing, if a developer runs a simple test on the booking feature in the system, the system displays the result in the console immediately within 3 seconds
 
 ---
 
