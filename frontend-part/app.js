@@ -1,20 +1,3 @@
-// --- Mock dataset (mock-data.js) ---
-const HF = window.HomeFixMock;
-if (!HF) {
-    console.error('HomeFix: load mock-data.js before app.js');
-}
-
-const employees = (HF && HF.employees ? HF.employees : []).map(e => ({ ...e }));
-let fakeReviews = (HF && HF.defaultProfileReviews ? HF.defaultProfileReviews : []).map(r => ({ ...r }));
-let fakeBookings = (HF && HF.initialCustomerBookings ? HF.initialCustomerBookings : []).map(b => ({ ...b }));
-let workerIncomingRequests = (HF && HF.initialWorkerRequests ? HF.initialWorkerRequests : []).map(r => ({ ...r }));
-let pendingWorkerApplications = HF && HF.initialPendingWorkerApplications
-    ? HF.initialPendingWorkerApplications.map(w => ({ ...w }))
-    : [];
-
-/** True on admin-panel.html only — mock gate, not real authentication */
-const isAdmin = typeof document !== 'undefined' && document.body && document.body.classList.contains('page-admin');
-
 // --- Modal state ---
 let currentLoginRole = 'user';
 let currentRegisterRole = 'user';
@@ -120,7 +103,7 @@ function selectRole(el, formType, role) {
 }
 
 // --- Login handler ---
-function handleLogin() {
+async function handleLogin() {
     const emailEl = document.getElementById('loginEmail');
     const passEl = document.getElementById('loginPassword');
     if (!emailEl || !passEl) return;
@@ -143,31 +126,42 @@ function handleLogin() {
         setLoginError('Please enter a valid email address (e.g. you@test.com).');
         return;
     }
-    // TODO: Connect to backend authentication
-    console.log('Login attempt:', { email, role: currentLoginRole });
 
+    // ─── Call the backend (api.js) ────────────────────────────────────────
+    // Falls back to the legacy mock redirect if api.js is not loaded, so the
+    // page still works when a teammate opens it without a running backend.
+    try {
+        if (typeof apiLogin === 'function') {
+            const user = await apiLogin({ email, password });
+            closeModal();
+            const target = typeof dashboardForUserType === 'function'
+                ? dashboardForUserType(user.user_type)
+                : 'user-dashboard.html';
+            window.location.assign(target);
+            return;
+        }
+    } catch (err) {
+        setLoginError(err && err.message ? err.message : 'Login failed. Please try again.');
+        return;
+    }
+
+    // ─── Fallback (no backend loaded) ─────────────────────────────────────
+    console.warn('api.js not loaded — using mock redirect');
     let target = '';
     switch (currentLoginRole) {
-        case 'user':
-            target = 'user-dashboard.html';
-            break;
-        case 'employee':
-            target = 'employee-dashboard.html';
-            break;
-        case 'admin':
-            target = 'admin-panel.html';
-            break;
+        case 'user':     target = 'user-dashboard.html';     break;
+        case 'employee': target = 'employee-dashboard.html'; break;
+        case 'admin':    target = 'admin-panel.html';        break;
         default:
             setLoginError('Please choose User, Employee, or Admin above.');
             return;
     }
-
     closeModal();
     window.location.assign(target);
 }
 
 // --- Register handler ---
-function handleRegister() {
+async function handleRegister() {
     const name = document.getElementById('regName').value.trim();
     const email = document.getElementById('regEmail').value.trim();
     const phone = document.getElementById('regPhone').value.trim();
@@ -197,10 +191,27 @@ function handleRegister() {
         }
     }
 
-    // TODO: Connect to backend registration endpoint
-    const userData = { name, email, phone, password, role: currentRegisterRole, serviceType };
-    console.log('Register attempt:', userData);
+    // ─── Call the backend (api.js) ────────────────────────────────────────
+    try {
+        if (typeof apiRegister === 'function') {
+            const user = await apiRegister({
+                name, email, phone, password, role: currentRegisterRole,
+            });
+            closeModal();
+            alert(`Account created! Welcome to HomeFix, ${name}!`);
+            const target = typeof dashboardForUserType === 'function'
+                ? dashboardForUserType(user.user_type)
+                : 'user-dashboard.html';
+            window.location.assign(target);
+            return;
+        }
+    } catch (err) {
+        alert((err && err.message) ? err.message : 'Registration failed. Please try again.');
+        return;
+    }
 
+    // ─── Fallback (no backend loaded) ─────────────────────────────────────
+    console.warn('api.js not loaded — mock register only');
     alert(`Account created! Welcome to HomeFix, ${name}!`);
     closeModal();
 }
@@ -277,19 +288,34 @@ function renderEmployees(list) {
 
 
 
+// Strip Turkish diacritics + lowercase so "Üsküdar" === "uskudar"
+function normalizeTurkish(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/İ/g, 'I').replace(/ı/g, 'i')
+        .replace(/Ş/g, 'S').replace(/ş/g, 's')
+        .replace(/Ğ/g, 'G').replace(/ğ/g, 'g')
+        .replace(/Ü/g, 'U').replace(/ü/g, 'u')
+        .replace(/Ö/g, 'O').replace(/ö/g, 'o')
+        .replace(/Ç/g, 'C').replace(/ç/g, 'c')
+        .toLowerCase()
+        .trim();
+}
+
 function filterEmployees() {
     const search = (document.getElementById('dashSearch')?.value || '').toLowerCase();
     const service = document.getElementById('filterService')?.value || '';
     const rating = parseFloat(document.getElementById('filterRating')?.value) || 0;
     const avail = document.getElementById('filterAvail')?.value || '';
     const area = document.getElementById('filterArea')?.value || '';
+    const areaNorm = normalizeTurkish(area);
 
     const filtered = employees.filter(emp => {
         const matchSearch = emp.name.toLowerCase().includes(search) || emp.service.toLowerCase().includes(search);
         const matchService = !service || emp.service === service;
         const matchRating = !rating || emp.rating >= rating;
         const matchAvail = !avail || emp.available;
-        const matchArea = !area || emp.area === area;
+        const matchArea = !areaNorm || normalizeTurkish(emp.area) === areaNorm;
         return matchSearch && matchService && matchRating && matchAvail && matchArea;
     });
 
@@ -339,8 +365,24 @@ function initUserDashboardFromQuery() {
 
 // Auto-render on page load
 if (document.getElementById('empGrid')) {
-    renderEmployees(employees);
-    initUserDashboardFromQuery();
+    // Try real backend first; fall back to mock data so the page still works offline.
+    if (typeof apiGetWorkers === 'function') {
+        apiGetWorkers()
+            .then(workers => {
+                // Reassign the module-level `employees` so filterEmployees() operates on real data.
+                employees = (workers || []).map(workerProfileToCard);
+                renderEmployees(employees);
+                initUserDashboardFromQuery();
+            })
+            .catch(err => {
+                console.warn('apiGetWorkers failed, falling back to mock data:', err);
+                renderEmployees(employees);
+                initUserDashboardFromQuery();
+            });
+    } else {
+        renderEmployees(employees);
+        initUserDashboardFromQuery();
+    }
 }
 // === EMPLOYEE PROFILE ===
 
@@ -353,44 +395,196 @@ function selectStar(n) {
     });
 }
 
+/**
+ * Format a backend ISO date as "dd MMM yyyy".
+ */
+function formatReviewDate(iso) {
+    if (!iso) return '';
+    try {
+        return new Date(iso).toLocaleDateString('en-GB', {
+            day: 'numeric', month: 'short', year: 'numeric',
+        });
+    } catch {
+        return iso;
+    }
+}
+
+/**
+ * Render a list of reviews. Accepts either:
+ *   - Backend shape: { id, customer_name, rating, comment, created_at }
+ *   - Legacy mock shape: { author, stars, date, text }
+ */
 function renderReviews(list) {
     const el = document.getElementById('reviewsList');
     if (!el) return;
-    el.innerHTML = list.map(r => `
+    if (!list || list.length === 0) {
+        el.innerHTML = `<div class="review-empty" style="color:var(--text-muted);font-style:italic;padding:12px 0;">No reviews yet — be the first to leave one.</div>`;
+        return;
+    }
+    el.innerHTML = list.map(r => {
+        const author = r.author || r.customer_name || 'Customer';
+        const stars  = r.stars != null ? r.stars : (r.rating || 0);
+        const date   = r.date  || formatReviewDate(r.created_at);
+        const text   = r.text  || r.comment || '';
+        const safeStars = Math.max(0, Math.min(5, Math.round(stars)));
+        return `
     <div class="review-item">
       <div class="review-top">
-        <span class="review-author">${r.author}</span>
-        <span class="review-stars">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</span>
+        <span class="review-author">${author}</span>
+        <span class="review-stars">${'★'.repeat(safeStars)}${'☆'.repeat(5 - safeStars)}</span>
       </div>
-      <div class="review-date">${r.date}</div>
-      <div class="review-text">${r.text}</div>
+      <div class="review-date">${date}</div>
+      <div class="review-text">${text}</div>
     </div>
-  `).join('');
+  `;
+    }).join('');
 }
 
-function submitReview() {
-    const text = document.getElementById('reviewText').value.trim();
+// Currently-viewed worker on employee-profile.html — set by renderProfileCard,
+// read by submitRequest() when the customer sends a booking.
+let currentProfileEmp = null;
+
+// Booking.id of the most recent completed-and-unreviewed booking the
+// logged-in customer has with the currently-viewed worker.
+// Null if the customer has nothing to review for this worker.
+let currentReviewableBookingId = null;
+
+function setReviewFormState({ enabled, message }) {
+    const form = document.querySelector('.review-form');
+    if (!form) return;
+    const picker   = form.querySelector('#starPicker');
+    const textarea = form.querySelector('#reviewText');
+    const button   = form.querySelector('button');
+
+    if (picker)   picker.style.pointerEvents = enabled ? 'auto' : 'none';
+    if (picker)   picker.style.opacity       = enabled ? '1'    : '0.5';
+    if (textarea) textarea.disabled          = !enabled;
+    if (button)   button.disabled            = !enabled;
+
+    let hint = form.querySelector('.review-hint');
+    if (message) {
+        if (!hint) {
+            hint = document.createElement('p');
+            hint.className = 'review-hint';
+            hint.style.fontSize = '13px';
+            hint.style.color = 'var(--text-muted)';
+            hint.style.margin = '8px 0 0';
+            form.appendChild(hint);
+        }
+        hint.textContent = message;
+    } else if (hint) {
+        hint.remove();
+    }
+}
+
+/**
+ * Load the reviews list + figure out whether the current customer can
+ * leave a new review for this worker.
+ */
+async function loadWorkerReviewsAndForm(emp) {
+    // 1) Pull public reviews list
+    try {
+        const reviews = await apiGetWorkerReviews(emp.id);
+        renderReviews(reviews);
+    } catch (err) {
+        console.warn('apiGetWorkerReviews failed:', err);
+        renderReviews([]);
+    }
+
+    // 2) Decide review-form state based on logged-in user
+    currentReviewableBookingId = null;
+
+    const me = getStoredUser && getStoredUser();
+    if (!me) {
+        setReviewFormState({ enabled: false, message: 'Log in as a customer to leave a review.' });
+        return;
+    }
+    if (me.user_type === 'worker') {
+        setReviewFormState({ enabled: false, message: 'Workers cannot review other workers.' });
+        return;
+    }
+    if (me.id === emp.userId) {
+        setReviewFormState({ enabled: false, message: 'You cannot review yourself.' });
+        return;
+    }
+
+    try {
+        const requests = await apiGetMyRequests();
+        // Find a completed request with this worker that has no review yet.
+        const reviewable = (requests || []).find(r =>
+            r.worker === emp.userId &&
+            r.status === 'completed' &&
+            r.booking_id &&
+            !r.has_review
+        );
+        if (reviewable) {
+            currentReviewableBookingId = reviewable.booking_id;
+            setReviewFormState({ enabled: true, message: '' });
+        } else {
+            const alreadyReviewed = (requests || []).some(r =>
+                r.worker === emp.userId && r.status === 'completed' && r.has_review
+            );
+            setReviewFormState({
+                enabled: false,
+                message: alreadyReviewed
+                    ? 'You have already reviewed this professional.'
+                    : 'You can only leave a review after completing a booking with this professional.',
+            });
+        }
+    } catch (err) {
+        console.warn('apiGetMyRequests failed:', err);
+        setReviewFormState({ enabled: false, message: 'Could not load your bookings — try again later.' });
+    }
+}
+
+async function submitReview() {
+    const textEl = document.getElementById('reviewText');
+    const text = (textEl ? textEl.value : '').trim();
+
     if (!selectedStar) { alert('Please select a star rating.'); return; }
-    if (!text) { alert('Please write a comment.'); return; }
+    if (!text)         { alert('Please write a comment.'); return; }
 
-    // TODO: send to backend
-    fakeReviews.unshift({ author: 'You', stars: selectedStar, date: 'Just now', text });
-    renderReviews(fakeReviews);
+    if (!currentReviewableBookingId) {
+        alert('You can only leave a review after completing a booking with this professional.');
+        return;
+    }
 
-    // Reset
-    document.getElementById('reviewText').value = '';
+    try {
+        await apiCreateReview({
+            booking: currentReviewableBookingId,
+            rating:  selectedStar,
+            comment: text,
+        });
+    } catch (err) {
+        const msg = (err && err.data && (err.data.error || JSON.stringify(err.data))) || err.message || 'Something went wrong.';
+        alert('Could not submit review: ' + msg);
+        return;
+    }
+
+    // Reset form
+    if (textEl) textEl.value = '';
     selectedStar = 0;
     document.querySelectorAll('#starPicker span').forEach(s => s.classList.remove('active'));
+
+    // Refresh reviews + update form state (this booking is no longer reviewable)
+    if (currentProfileEmp) {
+        await loadWorkerReviewsAndForm(currentProfileEmp);
+    }
+
+    // Refresh the rating / review count pill from the backend
+    try {
+        const wp = await apiGetWorker(currentProfileEmp.id);
+        const fresh = workerProfileToCard(wp);
+        const rEl = document.getElementById('profileRating');
+        const cEl = document.getElementById('profileReviews');
+        if (rEl) rEl.textContent = fresh.rating;
+        if (cEl) cEl.textContent = `· ${fresh.reviews} reviews`;
+    } catch { /* non-fatal */ }
 }
 
-// Load profile from URL param
-function loadProfile() {
-    const params = new URLSearchParams(window.location.search);
-    const id = parseInt(params.get('id'));
-    if (!id || !document.getElementById('profileName')) return;
-
-    const emp = employees.find(e => e.id === id);
-    if (!emp) return;
+// Render a profile card onto the employee-profile.html page
+function renderProfileCard(emp) {
+    currentProfileEmp = emp;
 
     const avatarEl = document.getElementById('profileAvatar');
     if (emp.photo) {
@@ -408,573 +602,35 @@ function loadProfile() {
     avail.textContent = emp.available ? '● Available now' : '● Busy';
     avail.className = `emp-avail ${emp.available ? 'available' : 'busy'}`;
 
-
-
     const requestModal = document.getElementById('requestEmpName');
     if (requestModal) requestModal.textContent = emp.name;
 
+    // Pull live reviews + decide whether the form should be active
+    loadWorkerReviewsAndForm(emp);
+}
 
-    renderReviews(fakeReviews);
+// Load profile from URL param — prefer backend, fall back to mock data
+async function loadProfile() {
+    const params = new URLSearchParams(window.location.search);
+    const id = parseInt(params.get('id'));
+    if (!id || !document.getElementById('profileName')) return;
+
+    // Try backend first
+    if (typeof apiGetWorker === 'function' && typeof workerProfileToCard === 'function') {
+        try {
+            const wp = await apiGetWorker(id);
+            const emp = workerProfileToCard(wp);
+            renderProfileCard(emp);
+            return;
+        } catch (err) {
+            console.warn('apiGetWorker failed, falling back to mock data:', err);
+        }
+    }
+
+    // Fallback: mock lookup by id
+    const emp = employees.find(e => e.id === id);
+    if (!emp) return;
+    renderProfileCard(emp);
 }
 
 loadProfile();
-
-
-function switchTab(el, tab) {
-    document.querySelectorAll('.acc-tab').forEach(t => {
-        t.classList.remove('active');
-        t.setAttribute('aria-selected', 'false');
-    });
-    el.classList.add('active');
-    el.setAttribute('aria-selected', 'true');
-    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-    const panel = document.getElementById('tab-' + tab);
-    if (panel) panel.style.display = 'block';
-    if (tab === 'bookings') renderBookings();
-}
-
-function renderBookings() {
-    const list = document.getElementById('bookingsList');
-    const none = document.getElementById('noBookings');
-    if (!list) return;
-
-    if (fakeBookings.length === 0) {
-        list.innerHTML = '';
-        none.style.display = 'block';
-        return;
-    }
-
-    none.style.display = 'none';
-    list.innerHTML = fakeBookings.map(b => `
-    <div class="booking-card">
-      <div class="booking-avatar">${b.initials}</div>
-      <div class="booking-info">
-        <strong>${b.name}</strong>
-        <span>${b.service}</span>
-      </div>
-      <div class="booking-date">${b.date}</div>
-      <span class="booking-status ${b.status}">${b.status.charAt(0).toUpperCase() + b.status.slice(1)}</span>
-      <button class="btn-view" onclick="window.location.href='employee-profile.html?id=${b.id}'">View Profile</button>
-     ${b.status === 'pending' ? `<button class="btn-cancel" onclick="cancelRequest(${b.id})">Cancel</button>` : ''}
-${b.status === 'confirmed' ? `<button class="btn-complete" onclick="markCompleted(${b.id})">Mark as Completed</button>` : ''}
-    </div>
-  `).join('');
-}
-
-function markCompleted(id) {
-    const booking = fakeBookings.find(b => b.id === id);
-    if (!booking) return;
-    booking.status = 'completed';
-    // TODO: send to backend
-    renderBookings();
-    refreshAdminViews();
-}
-
-function saveProfile() {
-    const name = document.getElementById('editName').value.trim();
-    const email = document.getElementById('editEmail').value.trim();
-    if (!name || !email) { alert('Name and email are required.'); return; }
-    // TODO: send to backend
-    document.getElementById('accountName').textContent = name;
-    document.getElementById('accountEmail').textContent = email;
-    document.getElementById('accountAvatarInitials').textContent = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    alert('Profile updated!');
-}
-
-function changePassword() {
-    const current = document.getElementById('currentPass').value.trim();
-    const next = document.getElementById('newPass').value.trim();
-    if (!current || !next) { alert('Please fill in both fields.'); return; }
-    if (next.length < 6) { alert('New password must be at least 6 characters.'); return; }
-    // TODO: send to backend
-    alert('Password updated!');
-    document.getElementById('currentPass').value = '';
-    document.getElementById('newPass').value = '';
-}
-
-
-function openRequestModal() {
-    const el = document.getElementById('requestOverlay');
-    if (el) el.classList.add('active');
-}
-
-function closeRequestModal() {
-    const el = document.getElementById('requestOverlay');
-    if (el) el.classList.remove('active');
-}
-
-function closeRequestOutside(event) {
-    const el = document.getElementById('requestOverlay');
-    if (el && event.target === el) closeRequestModal();
-}
-
-function submitRequest() {
-    const phone = document.getElementById('reqPhone').value.trim();
-    const address = document.getElementById('reqAddress').value.trim();
-    const datetime = document.getElementById('reqDateTime').value;
-    const problem = document.getElementById('reqProblem').value.trim();
-
-    if (!phone || !address || !datetime || !problem) {
-        alert('Please fill in all fields.');
-        return;
-    }
-
-    // TODO: send to backend
-    console.log('Request submitted:', { phone, address, datetime, problem });
-    alert('Request sent successfully! The professional will confirm shortly.');
-    closeRequestModal();
-}
-
-function cancelRequest(id) {
-    const booking = fakeBookings.find(b => b.id === id);
-    if (!booking) return;
-    booking.status = 'cancelled';
-    // TODO: send to backend
-    renderBookings();
-    refreshAdminViews();
-}
-
-
-// === PHOTO UPLOAD ===
-// TODO: connect to backend — send photo to API, receive URL, save in database
-
-function handlePhotoUpload(inputId, avatarElId, initialsElId) {
-    const file = document.getElementById(inputId).files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        const avatarEl = document.getElementById(avatarElId);
-        const initialsEl = document.getElementById(initialsElId);
-        avatarEl.innerHTML = `<img src="${e.target.result}" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`;
-        if (initialsEl) initialsEl.style.display = 'none';
-        // TODO: fetch('/api/upload-photo', { method: 'POST', body: formData })
-    };
-    reader.readAsDataURL(file);
-}
-
-// === EMPLOYEE DASHBOARD (mock — replace with API) ===
-
-function renderWorkerRequests() {
-    const list = document.getElementById('workerRequestList');
-    const empty = document.getElementById('workerNoRequests');
-    if (!list) return;
-
-    const pending = workerIncomingRequests.filter(r => r.status === 'pending');
-    if (pending.length === 0) {
-        list.innerHTML = '';
-        if (empty) empty.style.display = 'block';
-        return;
-    }
-    if (empty) empty.style.display = 'none';
-    list.innerHTML = pending.map(r => `
-    <div class="booking-card worker-request-card">
-      <div class="booking-avatar">${r.initials}</div>
-      <div class="booking-info" style="min-width:200px">
-        <strong>${r.customer}</strong>
-        <span>${r.service}</span>
-        <div class="request-detail">${r.address}</div>
-        <div class="request-detail">${r.when}</div>
-        <p class="request-problem">${r.problem}</p>
-      </div>
-      <div class="worker-request-actions">
-        <button type="button" class="btn-accept" onclick="acceptWorkerRequest(${r.id})">Accept</button>
-        <button type="button" class="btn-reject-worker" onclick="rejectWorkerRequest(${r.id})">Decline</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-function acceptWorkerRequest(id) {
-    const r = workerIncomingRequests.find(x => x.id === id);
-    if (!r) return;
-    r.status = 'accepted';
-    // TODO: PATCH booking / service request
-    renderWorkerRequests();
-}
-
-function rejectWorkerRequest(id) {
-    const r = workerIncomingRequests.find(x => x.id === id);
-    if (!r) return;
-    r.status = 'rejected';
-    // TODO: notify customer
-    renderWorkerRequests();
-}
-
-function setWorkerAvailableFromToggle() {
-    const el = document.getElementById('workerAvailToggle');
-    if (!el) return;
-    // TODO: sync availability with backend
-    console.log('Availability:', el.checked);
-}
-
-if (document.getElementById('workerRequestList')) {
-    const t = document.getElementById('workerAvailToggle');
-    if (t) t.addEventListener('change', setWorkerAvailableFromToggle);
-    renderWorkerRequests();
-}
-
-// === ADMIN PANEL (mock — replace with API) ===
-
-function renderPendingWorkers() {
-    const list = document.getElementById('adminPendingList');
-    const empty = document.getElementById('adminNoPending');
-    if (!list) return;
-
-    if (pendingWorkerApplications.length === 0) {
-        list.innerHTML = '';
-        if (empty) empty.style.display = 'block';
-        return;
-    }
-    if (empty) empty.style.display = 'none';
-    list.innerHTML = pendingWorkerApplications.map(w => `
-    <div class="booking-card admin-pending-card">
-      <div class="booking-avatar">${w.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()}</div>
-      <div class="booking-info" style="min-width:220px">
-        <strong>${w.name}</strong>
-        <span>${w.service} · Applied ${w.submitted}</span>
-        <div class="request-detail">${w.email}</div>
-        <div class="request-detail">${w.phone}</div>
-      </div>
-      <div class="worker-request-actions">
-        <button type="button" class="btn-accept" onclick="approveWorkerApplication(${w.id})">Approve</button>
-        <button type="button" class="btn-reject-worker" onclick="rejectWorkerApplication(${w.id})">Reject</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-function approveWorkerApplication(id) {
-    const i = pendingWorkerApplications.findIndex(w => w.id === id);
-    if (i === -1) return;
-    pendingWorkerApplications.splice(i, 1);
-    // TODO: POST admin/approve-worker
-    refreshAdminViews();
-    alert('Worker approved. They can now sign in as an employee.');
-}
-
-function rejectWorkerApplication(id) {
-    const i = pendingWorkerApplications.findIndex(w => w.id === id);
-    if (i === -1) return;
-    pendingWorkerApplications.splice(i, 1);
-    refreshAdminViews();
-    alert('Application rejected.');
-}
-
-let adminBookingsFilter = 'all';
-let adminBookingsSearch = '';
-let adminUsersSearch = '';
-let adminUsersList = [];
-
-function closeAdminDetailModal() {
-    const el = document.getElementById('adminDetailOverlay');
-    if (el) el.classList.remove('active');
-}
-
-function closeAdminDetailOutside(event) {
-    const el = document.getElementById('adminDetailOverlay');
-    if (el && event.target === el) closeAdminDetailModal();
-}
-
-function openAdminDetailModal(html) {
-    const body = document.getElementById('adminDetailModalBody');
-    const ov = document.getElementById('adminDetailOverlay');
-    if (!body || !ov) return;
-    body.innerHTML = html;
-    ov.classList.add('active');
-}
-
-function adminBookingStatusLabel(status) {
-    if (status === 'confirmed') return 'Confirmed';
-    return status.charAt(0).toUpperCase() + status.slice(1);
-}
-
-function adminBookingMatchesFilter(b) {
-    if (adminBookingsFilter === 'all') return true;
-    if (adminBookingsFilter === 'completed') return b.status === 'completed';
-    if (adminBookingsFilter === 'cancelled') return b.status === 'cancelled';
-    if (adminBookingsFilter === 'pending') return b.status === 'pending' || b.status === 'confirmed';
-    return true;
-}
-
-function adminBookingMatchesSearch(b) {
-    if (!adminBookingsSearch) return true;
-    const q = adminBookingsSearch;
-    const customer = (b.customer || '').toLowerCase();
-    const pro = (b.name || '').toLowerCase();
-    const svc = (b.service || '').toLowerCase();
-    const date = (b.date || '').toLowerCase();
-    return customer.includes(q) || pro.includes(q) || svc.includes(q) || date.includes(q);
-}
-
-function findBookingByAdminId(bookingId) {
-    return fakeBookings.find(b => String(b.bookingId) === String(bookingId));
-}
-
-function adminMarkBookingCompleted(bookingId) {
-    const b = findBookingByAdminId(bookingId);
-    if (!b) return;
-    b.status = 'completed';
-    closeAdminDetailModal();
-    refreshAdminViews();
-    if (document.getElementById('bookingsList')) renderBookings();
-}
-
-function adminCancelBooking(bookingId) {
-    const b = findBookingByAdminId(bookingId);
-    if (!b) return;
-    b.status = 'cancelled';
-    closeAdminDetailModal();
-    refreshAdminViews();
-    if (document.getElementById('bookingsList')) renderBookings();
-}
-
-function openAdminBookingModal(bookingId) {
-    const b = findBookingByAdminId(bookingId);
-    if (!b) return;
-    const bid = b.bookingId != null ? b.bookingId : b.id;
-    const canComplete = b.status !== 'completed' && b.status !== 'cancelled';
-    const canCancel = b.status !== 'cancelled';
-    const actions = `
-      <div class="admin-modal-actions">
-        ${canComplete ? `<button type="button" class="btn-main" onclick="adminMarkBookingCompleted(${bid})">Mark completed</button>` : ''}
-        ${canCancel ? `<button type="button" class="btn-reject-worker" onclick="adminCancelBooking(${bid})">Cancel booking</button>` : ''}
-        <a class="btn-outline" style="display:inline-block;text-decoration:none;text-align:center;padding:9px 16px;border-radius:var(--radius-sm);" href="employee-profile.html?id=${b.id}">View professional</a>
-      </div>`;
-    openAdminDetailModal(`
-      <h2>Booking #${bid}</h2>
-      <p class="modal-sub">${adminBookingStatusLabel(b.status)}</p>
-      <div class="admin-modal-grid">
-        <div><span class="admin-modal-label">Service</span><div>${b.service}</div></div>
-        <div><span class="admin-modal-label">Customer</span><div>${b.customer || '—'}</div></div>
-        <div><span class="admin-modal-label">Professional</span><div>${b.name}</div></div>
-        <div><span class="admin-modal-label">Date</span><div>${b.date}</div></div>
-      </div>
-      ${actions}
-    `);
-}
-
-function buildAdminUsersFromMock() {
-    if (!HF) return [];
-    const out = [];
-    const seenCustomer = new Set();
-
-    (HF.employees || []).forEach(e => {
-        out.push({
-            uid: 'worker-' + e.id,
-            name: e.name,
-            role: 'Worker',
-            blocked: false,
-            detail: e.service + ' · ' + e.area,
-        });
-    });
-
-    (HF.initialCustomerBookings || []).forEach(b => {
-        const c = b.customer || 'Customer';
-        const key = c.toLowerCase();
-        if (seenCustomer.has(key)) return;
-        seenCustomer.add(key);
-        const slug = key.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'user';
-        out.push({ uid: 'customer-' + slug, name: c, role: 'Customer', blocked: false });
-    });
-
-    (HF.initialWorkerRequests || []).forEach(r => {
-        const c = r.customer;
-        const key = c.toLowerCase();
-        if (seenCustomer.has(key)) return;
-        seenCustomer.add(key);
-        const slug = key.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'user';
-        out.push({ uid: 'customer-' + slug, name: c, role: 'Customer', blocked: false });
-    });
-
-    (HF.initialPendingWorkerApplications || []).forEach(w => {
-        out.push({
-            uid: 'applicant-' + w.id,
-            name: w.name,
-            role: 'Applicant',
-            blocked: false,
-            detail: w.service + ' · ' + w.email,
-        });
-    });
-
-    out.push({ uid: 'admin-demo', name: 'System Administrator', role: 'Admin', blocked: false, detail: 'Demo account' });
-    return out.map(u => ({ ...u }));
-}
-
-function openAdminUserModal(uid) {
-    const u = adminUsersList.find(x => x.uid === uid);
-    if (!u) return;
-    const blocked = u.blocked;
-    openAdminDetailModal(`
-      <h2>${u.name}</h2>
-      <p class="modal-sub">${u.role}${u.detail ? ' · ' + u.detail : ''}</p>
-      <p class="panel-hint">Status: <strong>${blocked ? 'Blocked' : 'Active'}</strong></p>
-      <div class="admin-modal-actions">
-        <button type="button" class="btn-main" onclick='toggleAdminUserBlock(${JSON.stringify(uid)}, ${!blocked})'>${blocked ? 'Unblock user' : 'Block user'}</button>
-      </div>
-    `);
-}
-
-function toggleAdminUserBlock(uid, nextBlocked) {
-    const u = adminUsersList.find(x => x.uid === uid);
-    if (!u) return;
-    u.blocked = !!nextBlocked;
-    closeAdminDetailModal();
-    refreshAdminViews();
-}
-
-function adminUserMatchesSearch(u) {
-    if (!adminUsersSearch) return true;
-    const q = adminUsersSearch;
-    return u.name.toLowerCase().includes(q) || u.role.toLowerCase().includes(q);
-}
-
-function renderAdminDashboardStats() {
-    const el = document.getElementById('adminDashboardStats');
-    if (!el) return;
-
-    const bookingsTotal = fakeBookings.length;
-    const bookingsOpen = fakeBookings.filter(b => b.status === 'pending' || b.status === 'confirmed').length;
-    const workerPending = workerIncomingRequests.filter(r => r.status === 'pending').length;
-    const appsPending = pendingWorkerApplications.length;
-    const usersActive = adminUsersList.filter(u => !u.blocked).length;
-    const usersBlocked = adminUsersList.filter(u => u.blocked).length;
-
-    el.innerHTML = `
-    <div class="admin-stat-card"><span class="admin-stat-value">${bookingsTotal}</span><span class="admin-stat-label">Bookings (total)</span></div>
-    <div class="admin-stat-card"><span class="admin-stat-value">${bookingsOpen}</span><span class="admin-stat-label">Open bookings</span></div>
-    <div class="admin-stat-card"><span class="admin-stat-value">${workerPending}</span><span class="admin-stat-label">Worker requests (pending)</span></div>
-    <div class="admin-stat-card"><span class="admin-stat-value">${appsPending}</span><span class="admin-stat-label">Pending applications</span></div>
-    <div class="admin-stat-card"><span class="admin-stat-value">${usersActive}</span><span class="admin-stat-label">Active users</span></div>
-    <div class="admin-stat-card"><span class="admin-stat-value">${usersBlocked}</span><span class="admin-stat-label">Blocked users</span></div>
-  `;
-}
-
-function renderAdminBookingsTable() {
-    const tbody = document.getElementById('adminBookingsTableBody');
-    const none = document.getElementById('adminNoBookings');
-    const table = document.getElementById('adminBookingsTable');
-    if (!tbody) return;
-
-    const rows = fakeBookings.filter(b => adminBookingMatchesFilter(b) && adminBookingMatchesSearch(b));
-    if (rows.length === 0) {
-        tbody.innerHTML = '';
-        if (none) none.style.display = 'block';
-        if (table) table.style.display = 'none';
-        return;
-    }
-    if (none) none.style.display = 'none';
-    if (table) table.style.display = '';
-
-    tbody.innerHTML = rows.map(b => {
-        const bid = b.bookingId != null ? b.bookingId : b.id;
-        const st = adminBookingStatusLabel(b.status);
-        const canComplete = b.status !== 'completed' && b.status !== 'cancelled';
-        const canCancel = b.status !== 'cancelled';
-        return `
-      <tr class="admin-table-row" onclick="openAdminBookingModal(${bid})">
-        <td>${b.service}</td>
-        <td>${b.customer || '—'}</td>
-        <td>${b.name}</td>
-        <td><span class="booking-status ${b.status}">${st}</span></td>
-        <td>${b.date}</td>
-        <td class="admin-table-actions" onclick="event.stopPropagation()">
-          ${canComplete ? `<button type="button" class="btn-complete" onclick="adminMarkBookingCompleted(${bid})">Complete</button>` : ''}
-          ${canCancel ? `<button type="button" class="btn-cancel" onclick="adminCancelBooking(${bid})">Cancel</button>` : ''}
-        </td>
-      </tr>`;
-    }).join('');
-}
-
-function renderAdminUsersTable() {
-    const tbody = document.getElementById('adminUsersTableBody');
-    const none = document.getElementById('adminNoUsers');
-    const table = document.getElementById('adminUsersTable');
-    if (!tbody) return;
-
-    const rows = adminUsersList.filter(adminUserMatchesSearch);
-    if (rows.length === 0) {
-        tbody.innerHTML = '';
-        if (none) none.style.display = 'block';
-        if (table) table.style.display = 'none';
-        return;
-    }
-    if (none) none.style.display = 'none';
-    if (table) table.style.display = '';
-
-    tbody.innerHTML = rows.map(u => {
-        const statusLabel = u.blocked ? 'Blocked' : 'Active';
-        const statusClass = u.blocked ? 'cancelled' : 'completed';
-        return `
-      <tr class="admin-table-row" onclick='openAdminUserModal(${JSON.stringify(u.uid)})'>
-        <td>${u.name}</td>
-        <td>${u.role}</td>
-        <td><span class="booking-status ${statusClass}">${statusLabel}</span></td>
-        <td class="admin-table-actions" onclick="event.stopPropagation()">
-          <button type="button" class="${u.blocked ? 'btn-complete' : 'btn-reject-worker'}" onclick='toggleAdminUserBlock(${JSON.stringify(u.uid)}, ${!u.blocked})'>${u.blocked ? 'Unblock' : 'Block'}</button>
-        </td>
-      </tr>`;
-    }).join('');
-}
-
-function switchAdminSection(section) {
-    document.querySelectorAll('.admin-nav-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('data-admin-section') === section);
-    });
-    document.querySelectorAll('.admin-section').forEach(sec => {
-        sec.hidden = sec.id !== 'admin-section-' + section;
-    });
-    if (section === 'bookings') renderAdminBookingsTable();
-    if (section === 'users') renderAdminUsersTable();
-}
-
-function rebuildAdminUsersPreservingBlocks() {
-    const prev = new Map(adminUsersList.map(u => [u.uid, u.blocked]));
-    adminUsersList = buildAdminUsersFromMock().map(u => ({
-        ...u,
-        blocked: prev.has(u.uid) ? !!prev.get(u.uid) : false,
-    }));
-}
-
-function refreshAdminViews() {
-    if (!document.getElementById('adminShell')) return;
-    rebuildAdminUsersPreservingBlocks();
-    renderAdminDashboardStats();
-    renderPendingWorkers();
-    renderAdminBookingsTable();
-    renderAdminUsersTable();
-}
-
-function initAdminPage() {
-    if (!isAdmin || !document.getElementById('adminShell')) return;
-
-    document.querySelectorAll('.admin-nav-btn').forEach(btn => {
-        btn.addEventListener('click', () => switchAdminSection(btn.getAttribute('data-admin-section')));
-    });
-
-    const bf = document.getElementById('adminBookingFilter');
-    if (bf) {
-        bf.addEventListener('change', () => {
-            adminBookingsFilter = bf.value;
-            renderAdminBookingsTable();
-        });
-    }
-    const bs = document.getElementById('adminBookingSearch');
-    if (bs) {
-        bs.addEventListener('input', () => {
-            adminBookingsSearch = bs.value.trim().toLowerCase();
-            renderAdminBookingsTable();
-        });
-    }
-    const us = document.getElementById('adminUserSearch');
-    if (us) {
-        us.addEventListener('input', () => {
-            adminUsersSearch = us.value.trim().toLowerCase();
-            renderAdminUsersTable();
-        });
-    }
-
-    refreshAdminViews();
-}
-
-initAdminPage();
