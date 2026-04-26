@@ -149,9 +149,9 @@ async function handleLogin() {
     console.warn('api.js not loaded — using mock redirect');
     let target = '';
     switch (currentLoginRole) {
-        case 'user':     target = 'user-dashboard.html';     break;
+        case 'user': target = 'user-dashboard.html'; break;
         case 'employee': target = 'employee-dashboard.html'; break;
-        case 'admin':    target = 'admin-panel.html';        break;
+        case 'admin': target = 'admin-panel.html'; break;
         default:
             setLoginError('Please choose User, Employee, or Admin above.');
             return;
@@ -423,9 +423,9 @@ function renderReviews(list) {
     }
     el.innerHTML = list.map(r => {
         const author = r.author || r.customer_name || 'Customer';
-        const stars  = r.stars != null ? r.stars : (r.rating || 0);
-        const date   = r.date  || formatReviewDate(r.created_at);
-        const text   = r.text  || r.comment || '';
+        const stars = r.stars != null ? r.stars : (r.rating || 0);
+        const date = r.date || formatReviewDate(r.created_at);
+        const text = r.text || r.comment || '';
         const safeStars = Math.max(0, Math.min(5, Math.round(stars)));
         return `
     <div class="review-item">
@@ -452,14 +452,14 @@ let currentReviewableBookingId = null;
 function setReviewFormState({ enabled, message }) {
     const form = document.querySelector('.review-form');
     if (!form) return;
-    const picker   = form.querySelector('#starPicker');
+    const picker = form.querySelector('#starPicker');
     const textarea = form.querySelector('#reviewText');
-    const button   = form.querySelector('button');
+    const button = form.querySelector('button');
 
-    if (picker)   picker.style.pointerEvents = enabled ? 'auto' : 'none';
-    if (picker)   picker.style.opacity       = enabled ? '1'    : '0.5';
-    if (textarea) textarea.disabled          = !enabled;
-    if (button)   button.disabled            = !enabled;
+    if (picker) picker.style.pointerEvents = enabled ? 'auto' : 'none';
+    if (picker) picker.style.opacity = enabled ? '1' : '0.5';
+    if (textarea) textarea.disabled = !enabled;
+    if (button) button.disabled = !enabled;
 
     let hint = form.querySelector('.review-hint');
     if (message) {
@@ -542,7 +542,7 @@ async function submitReview() {
     const text = (textEl ? textEl.value : '').trim();
 
     if (!selectedStar) { alert('Please select a star rating.'); return; }
-    if (!text)         { alert('Please write a comment.'); return; }
+    if (!text) { alert('Please write a comment.'); return; }
 
     if (!currentReviewableBookingId) {
         alert('You can only leave a review after completing a booking with this professional.');
@@ -552,7 +552,7 @@ async function submitReview() {
     try {
         await apiCreateReview({
             booking: currentReviewableBookingId,
-            rating:  selectedStar,
+            rating: selectedStar,
             comment: text,
         });
     } catch (err) {
