@@ -17,21 +17,7 @@
         <a href="index.html" class="logo">Home<span>Fix</span></a>
         <div class="nav-btns">
             <a href="my-account.html" class="nav-link">My Account</a>
-            <<<<<<< HEAD <a href="contact-us.html" class="nav-link">Contact</a>
-                <!-- Notification Bell -->
-                <div class="notif-bell" id="notifBell">
-                    <button type="button" class="notif-btn" onclick="toggleNotifDropdown()" aria-label="Notifications"
-                        title="Notifications">
-                        🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span>
-                    </button>
-                    <div class="notif-dropdown" id="notifDropdown" style="display:none">
-                        <div class="notif-dropdown-hd">Notifications</div>
-                        <div class="notif-dropdown-max" id="notifList"></div>
-                    </div>
-                </div>
-                =======
-                >>>>>>> d1c93561b3177005acfc17eb5069f6c3c07bbd77
-                <button class="btn-outline" onclick="handleLogout()">Log out</button>
+            <button class="btn-outline" onclick="handleLogout()">Log out</button>
         </div>
     </nav>
 
@@ -48,6 +34,7 @@
             <button onclick="filterEmployees()">Search</button>
         </div>
 
+        <!-- FILTERS -->
         <div class="filters">
             <div class="filter-group">
                 <label>Service</label>
@@ -92,6 +79,7 @@
 
         </div>
 
+        <!-- CATEGORY PILLS -->
         <div class="cat-pills">
             <span class="pill active" onclick="selectPill(this, '')">All</span>
             <span class="pill" onclick="selectPill(this, 'Cleaning')">🧹 Cleaning</span>
