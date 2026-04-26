@@ -381,7 +381,7 @@ The following diagram shows the high-level components of the system and the comm
 This diagram illustrates the internal package structure of the Django project from the database developer's perspective, showing how modules are organized and which packages depend on each other.
 
 <p align="center">
-  <img src="figures/Package_Diagram.png" width="600"/>
+  <img src="figures/package Diagram.png" width="600"/>
 </p>
 
 <p align="center"><b>Figure 7.3:</b> Package Diagram</p>
