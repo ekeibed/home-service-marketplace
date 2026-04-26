@@ -569,11 +569,11 @@ Overall, the system provides acceptable performance for its intended use and can
 
 This section defines the non-functional requirements that the system architecture must satisfy to ensure high-quality service and a positive user experience. These attributes serve as the benchmark for evaluating the success of the Home Service System’s architectural design beyond its basic functional capabilities.
 
-* **Availability** The system must maintain 99.9% uptime to ensure users can reliably book services and manage appointments without interruption.  
-    **Scenario:** If a system fault causes a database connection failure in the Data Layer during normal operation, the system must notify the user of the error within 5 seconds and attempt to restore the connection automatically within 30 seconds.
-
+* **Availability** The system ensures users can access services without interruption during normal operation. 
+    **Scenario:** In normal use, when a user searches or requests a service through the web application , the system backend responds by returning the requested data. The system must be available 99% of the time over a year.
+  
 * **Performance** The responsiveness of the web application is critical for user retention and efficient service matching.  
-    **Scenario:** If there are 30 concurrent clients performing search requests through the Web Interface under normal operation, the system must display the results in less than 1 second.
+    **Scenario:** If there are 20 concurrent clients performing search requests through the Web Interface under normal operation, the system must display the results in less than 1 second.
 
 * **Security** The system must ensure that only registered users with valid credentials can access private account features.  
     **Scenario:** If a user attempts to log in with an incorrect password through the Login Page during normal operation, the system must deny access and display an "Invalid Credentials" error message in less than 4 seconds.
@@ -585,7 +585,7 @@ This section defines the non-functional requirements that the system architectur
     **Scenario:** If a new customer performs a first-time booking task via the User Interface under normal operation, the user must successfully complete the workflow within 3 minutes.
 
 * **Maintainability** The codebase must be structured to reduce technical debt and simplify the debugging process for developers.  
-    **Scenario:** If a developer identifies a logic fault within the Notification Module during the maintenance phase, the developer must be able to isolate and  repair the bug with minimal side effects on other system modules.
+    **Scenario:** If a developer identifies a logic fault within the booking module during the maintenance phase, the developer must be able to isolate and  repair the bug with minimal side effects on other system modules.
 
 * **Testability** The design must support simple testing to ensure the system works correctly before any new deployment.
     **Scenario:** During normal testing, if a developer runs a simple test on the booking feature in the system, the system displays the result in the console immediately within 3 seconds
