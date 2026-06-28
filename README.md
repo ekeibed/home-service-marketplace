@@ -2,7 +2,7 @@
 
 
 - GitHub Repository: https://github.com/ekeibed/home-service-marketplace
-- YouTube Demo: https://youtu.be/eNutfi1OmV8?si=8WAO123opWCRr-Oq
+
 <table>
   <tr>
     <th>Student ID</th>
